@@ -1,0 +1,18 @@
+{
+  "name": "unoapi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "前端API自动化编码工具",
+  "scripts": {
+    "dev": "echo 'Run subprojects individually'",
+    "build": "pnpm -r build",
+    "release": "changeset publish"
+  },
+  "keywords": [],
+  "author": "moohng@前端星河",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "24.3.1",
+    "typescript": "5.9.2"
+  }
+}
