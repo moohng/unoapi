@@ -7,7 +7,7 @@
     "uno": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc --outDir dist"
+    "build": "tsc -p tsconfig.json"
   },
   "files": [
     "dist"
@@ -20,6 +20,8 @@
   "author": "moohng@前端星河",
   "license": "ISC",
   "dependencies": {
-    "commander": "^14.0.0"
+    "@unoapi/core": "workspace:*",
+    "commander": "^14.0.0",
+    "inquirer": "^12.9.4"
   }
 }

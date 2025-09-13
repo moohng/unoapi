@@ -4,8 +4,8 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "strict": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "declaration": true
   },
-  "include": ["src", "packages/**/src"],
-  "exclude": ["node_modules"]
+  "include": ["src", "packages/**/src"]
 }

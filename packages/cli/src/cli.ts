@@ -1,15 +1,45 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import inquirer from 'inquirer';
+import { generateConfigFile, existsConfig } from '@unoapi/core';
 
 const program = new Command();
 
 // init 初始化配置文件
 program
-  .command('init [url]')
+  .command('init')
+  .option('-u, --openapi-url [openapiUrl]', 'OpenAPI URL 地址')
   .description('初始化UnoAPI配置文件')
-  .action((openApiUrl) => {
-    console.log('生成配置文件 unoapi.config.js');
-    console.log('openApiUrl:', openApiUrl);
+  .action(async (options) => {
+    if (await existsConfig()) {
+      // 让用户确认
+      const { isOverwrite } = await inquirer.prompt({
+        type: 'confirm',
+        name: 'isOverwrite',
+        message: '配置文件已存在，是否覆盖？',
+        default: false,
+      });
+      if (!isOverwrite) {
+        console.error('已取消');
+        process.exit(1);
+      }
+    }
+    const { openapiUrl } = options;
+    try {
+      await generateConfigFile(openapiUrl);
+      console.log('配置文件创建成功：unoapi.config.ts');
+    } catch (error) {
+      console.error('配置文件创建失败：', error);
+      process.exit(1);
+    }
+  });
+
+// update 更新 OpenAPI 文档
+program
+  .command('update')
+  .description('更新 OpenAPI 文档')
+  .action(() => {
+    console.log('更新OpenAPI文档');
   });
 
 // api 生成API代码

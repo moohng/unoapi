@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist/types"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/tpl.ts"]
+}
