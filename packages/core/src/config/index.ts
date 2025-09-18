@@ -47,7 +47,6 @@ const CONFIG_PATH = process.cwd() + '/unoapi.config.ts';
  * @param url OpenAPI URL 地址
  */
 export async function generateConfigFile(url?: string) {
-
   const tpl = await fs.readFile(__dirname + '/tpl.ts', 'utf-8');
   const configContent = tpl.replace('${openapiUrl}', url || 'https://api.example.com/openapi.json');
   // 在项目根目录生成 unoapi.config.ts

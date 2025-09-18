@@ -9,7 +9,7 @@ const program = new Command();
 program
   .command('init')
   .option('-u, --openapi-url [openapiUrl]', 'OpenAPI URL 地址')
-  .description('初始化UnoAPI配置文件')
+  .description('初始化 UnoAPI 配置文件')
   .action(async (options) => {
     if (await existsConfig()) {
       // 让用户确认
