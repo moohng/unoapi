@@ -7,8 +7,16 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node build/copyTpl.js"
   },
-  "files": ["dist"],
-  "keywords": ["uno", "unoapi"],
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "uno",
+    "unoapi"
+  ],
   "author": "moohng@前端星河",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "ts-node": "10.9.2"
+  }
 }

@@ -22,6 +22,6 @@
   "dependencies": {
     "@unoapi/core": "workspace:*",
     "commander": "^14.0.0",
-    "inquirer": "^12.9.4"
+    "@inquirer/prompts": "^7.9.0"
   }
 }
