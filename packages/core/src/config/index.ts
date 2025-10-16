@@ -1,31 +1,33 @@
 import * as fs from 'fs/promises';
+import * as path from 'path';
+import { UnoAPIContext } from '../types';
 
 /**
  * OpenAPI JSON 文档
  */
 interface OpenAPIJsonDoc {
-  openapi: string;
-}
-
-/**
- * UnoAPI 上下文
- */
-interface UnoAPIContext {
-
+  paths: Record<string, object>;
+  components?: [];
 }
 
 /**
  * UnoAPI 配置项
  */
-interface UnoAPIConfig {
+export interface UnoAPIConfig {
   /**
    * OpenAPI URL 地址，可以是字符串或返回字符串的函数
    */
   openapiUrl: string | (() => Promise<OpenAPIJsonDoc> | OpenAPIJsonDoc);
+  /**
+   * 输出目录，默认 src/api；数组表示models输出目录
+   */
   output?: string | [string, string];
+  /**
+   * 缓存文件，默认 [output]/.openapi-cache.json
+   */
   cacheFile?: string;
   typeMapping?: string[][];
-  funcTpl?: (context: UnoAPIContext) => string;
+  funcTpl?: (context: UnoAPIContext) => string | Promise<string> | UnoAPIContext | Promise<UnoAPIContext>;
 }
 
 /**
@@ -35,12 +37,60 @@ interface UnoAPIConfig {
  */
 export async function defineUnoAPIConfig(config: UnoAPIConfig | (() => UnoAPIConfig | Promise<UnoAPIConfig>)) {
   if (typeof config === 'function') {
-    return await config();
+    config = await config();
   }
+  return checkConfig(config);
+}
+
+/**
+ * 检查并处理配置项
+ * @param config 配置项
+ * @returns 
+ */
+function checkConfig(config: UnoAPIConfig) {
+  if (!config.openapiUrl) {
+    throw new Error('openapiUrl is required');
+  }
+
+  if (typeof config.output === 'string') {
+    if (!path.isAbsolute(config.output)) {
+      config.output = path.join(process.cwd(), config.output);
+    }
+  } else if (Array.isArray(config.output)) {
+    config.output = config.output.map(dir => {
+      if (!path.isAbsolute(dir)) {
+        dir = path.join(process.cwd(), dir);
+      }
+      return dir;
+    }) as [string, string];
+  }
+
+  if (config.cacheFile) {
+    if (!path.isAbsolute(config.cacheFile)) {
+      config.cacheFile = path.join(process.cwd(), config.cacheFile);
+    }
+  }
+
   return config;
 }
 
+/** 配置路径 */
 const CONFIG_PATH = process.cwd() + '/unoapi.config.ts';
+
+/** 默认输出目录 */
+export const DEFAULT_OUTPUT = 'src/api';
+
+/**
+ * 获取默认缓存文件路径
+ * @param output 输出目录
+ * @returns 
+ */
+export function getDefaultCacheFile(output = DEFAULT_OUTPUT) {
+  if (!path.isAbsolute(output)) {
+    output = path.join(process.cwd(), output || DEFAULT_OUTPUT);
+  }
+  return path.join(output, '.openapi-cache.json');
+}
 
 /**
  * 生成配置文件
@@ -54,11 +104,18 @@ export async function generateConfigFile(url?: string) {
 }
 
 /**
- * 加载配置文件
+ * 加载配置文件（支持 ts-node）
  * @returns
  */
-export async function loadConfig() {
-  return import(CONFIG_PATH).then(mod => mod.default || mod);
+export async function loadConfig(): Promise<UnoAPIConfig> {
+  require('ts-node').register({
+    transpileOnly: true,
+    compilerOptions: {
+      module: 'commonjs'
+    }
+  });
+  const mod = require(CONFIG_PATH);
+  return mod.default || mod;
 }
 
 /**

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import inquirer from 'inquirer';
-import { generateConfigFile, existsConfig } from '@unoapi/core';
+import * as inquirer from '@inquirer/prompts';
+// import { CheckboxPlusPrompt } from 'inquirer-ts-checkbox-plus-prompt';
+import { generateConfigFile, existsConfig, updateOpenAPIDoc, createUnoAPI, loadConfig } from '@unoapi/core';
 
 const program = new Command();
 
@@ -13,9 +14,7 @@ program
   .action(async (options) => {
     if (await existsConfig()) {
       // 让用户确认
-      const { isOverwrite } = await inquirer.prompt({
-        type: 'confirm',
-        name: 'isOverwrite',
+      const isOverwrite = await inquirer.confirm({
         message: '配置文件已存在，是否覆盖？',
         default: false,
       });
@@ -38,8 +37,13 @@ program
 program
   .command('update')
   .description('更新 OpenAPI 文档')
-  .action(() => {
-    console.log('更新OpenAPI文档');
+  .action(async () => {
+    try {
+      await updateOpenAPIDoc();
+    } catch (error) {
+      console.error('操作失败：', error);
+      process.exit(1);
+    }
   });
 
 // api 生成API代码
@@ -47,12 +51,46 @@ program
   .command('api', { isDefault: true })
   .argument('[urls...]', '接口 URL，可以是多个，用空格分隔')
   .description('生成 API 代码')
-  .option('-o, --output [output]', '输出目录', 'src/api')
-  .option('--func [functionName]', '自定义 API 函数名称')
-  .action((urls, options) => {
-    console.log('生成API代码');
-    console.log('urls:', urls);
-    console.log('options:', options);
+  .option('-o, --output <output>', '输出目录')
+  .option('--func <funcName>', '自定义 API 函数名称')
+  .option('--all', '生成所有接口的代码')
+  .action(async (urls, options) => {
+    console.log('生成API代码', options);
+    if (!await existsConfig()) {
+      console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
+      process.exit(1);
+    }
+    const config = await loadConfig();
+    console.log('配置文件', config);
+    const unoapi = createUnoAPI(config);
+
+    if (options.all) {
+      // 生成所有接口的代码
+      urls = [];
+    } else if (urls?.length === 0) {
+      // 让用户选择
+      const selectedUrl = await inquirer.search<string>({
+        message: '使用关键字搜索接口：',
+        source: async (term) => unoapi.getUrlList(term || ''),
+        pageSize: 10,
+      });
+      urls = [selectedUrl];
+    }
+
+    console.log('urls：', urls);
+
+    try {
+      await unoapi
+        .api(urls)
+        .on(() => {
+          console.log('开始生成代码...');
+        })
+        .start({ funcName: options.funcName, output: options.output });
+      process.exit(0);
+    } catch (error) {
+      console.error('操作失败：', error);
+      process.exit(1);
+    }
   });
 
 program.parse(process.argv);
