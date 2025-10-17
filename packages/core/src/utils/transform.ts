@@ -1,5 +1,5 @@
-import { SchemaProperty, TypeFieldOption } from '../types';
-import { parseToTsType } from './parse';
+import { SchemaProperty, TypeFieldOption } from '../types.js';
+import { parseToTsType } from './parse.js';
 
 /**
  * 生成类型字段代码

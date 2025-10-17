@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { UnoAPIContext } from '../types';
+import * as esbuild from 'esbuild';
+import { UnoAPIContext } from '../types.js';
 
 /**
  * OpenAPI JSON 文档
@@ -108,14 +109,23 @@ export async function generateConfigFile(url?: string) {
  * @returns
  */
 export async function loadConfig(): Promise<UnoAPIConfig> {
-  require('ts-node').register({
-    transpileOnly: true,
-    compilerOptions: {
-      module: 'commonjs'
-    }
+  // const tsNode = await import('ts-node');
+  // tsNode.register({
+  //   transpileOnly: true,
+  //   compilerOptions: {
+  //     module: 'commonjs'
+  //   }
+  // });
+  const tmpFile = path.resolve('unoapi.config.js');
+  await esbuild.build({
+    entryPoints: [CONFIG_PATH],
+    platform: 'node',
+    format: 'cjs',
+    outfile: tmpFile,
   });
-  const mod = require(CONFIG_PATH);
-  return mod.default || mod;
+  const mod = await import(`file://${tmpFile}`);
+  fs.rm(tmpFile);
+  return mod.default.default || mod;
 }
 
 /**

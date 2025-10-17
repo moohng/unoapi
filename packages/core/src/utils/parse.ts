@@ -1,5 +1,5 @@
-import { SchemaProperty } from "../types";
-import { formatObjName, isBaseType } from "./common";
+import { SchemaProperty } from "../types.js";
+import { formatObjName, isBaseType } from "./common.js";
 
 /**
  * 解析URL路径

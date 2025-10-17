@@ -1,5 +1,5 @@
-import { UnoAPIContext } from "../config";
-import { transformTypeFieldCode } from "./transform";
+import { UnoAPIContext } from '../types.js';
+import { transformTypeFieldCode } from './transform.js';
 
 /**
  * 输出 api 函数代码

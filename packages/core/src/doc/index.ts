@@ -1,8 +1,8 @@
 import { writeFile } from 'fs/promises';
-import { getDefaultCacheFile, loadConfig } from '../config';
+import { getDefaultCacheFile, loadConfig } from '../config/index.js';
 
 /**
- * @description: 更新 OpenAPI 文档
+ * 更新 OpenAPI 文档
  */
 export async function updateOpenAPIDoc() {
   console.log('更新 OpenAPI 文档');

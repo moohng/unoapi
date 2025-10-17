@@ -1,3 +1,3 @@
-export * from './config';
-export * from './doc';
-export * from './unoapi';
+export * from './config/index.js';
+export * from './doc/index.js';
+export * from './unoapi.js';

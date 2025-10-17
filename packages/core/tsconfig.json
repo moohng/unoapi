@@ -1,11 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "outDir": "dist",
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "dist/esm",
+    "rootDir": "src",
     "declaration": true,
-    "declarationDir": "dist/types"
+    "declarationDir": "dist/types",
+    "esModuleInterop": true,
+    "strict": true,
+    "sourceMap": true,
+    "composite": true,
   },
   "include": ["src"],
   "exclude": ["src/**/tpl.ts"]

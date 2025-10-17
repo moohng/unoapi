@@ -1,7 +1,9 @@
-const fs = require('fs/promises');
-const path = require('path');
+import { copyFile } from 'fs/promises';
+import { resolve } from 'path';
 
-const src = path.join(__dirname, '../src/config/tpl.ts');
-const dest = path.join(__dirname, '../dist/config/tpl.ts');
+const src = resolve('src/config/tpl.ts');
+const esm = resolve('dist/esm/config/tpl.ts');
+const cjs = resolve('dist/cjs/tpl.ts');
 
-fs.copyFile(src, dest);
+copyFile(src, esm);
+copyFile(src, cjs);

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-// import { CheckboxPlusPrompt } from 'inquirer-ts-checkbox-plus-prompt';
 import { generateConfigFile, existsConfig, updateOpenAPIDoc, createUnoAPI, loadConfig } from '@unoapi/core';
 
 const program = new Command();
@@ -55,7 +54,7 @@ program
   .option('--func <funcName>', '自定义 API 函数名称')
   .option('--all', '生成所有接口的代码')
   .action(async (urls, options) => {
-    console.log('生成API代码', options);
+    console.log('生成 API 代码', options);
     if (!await existsConfig()) {
       console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
       process.exit(1);
@@ -83,7 +82,7 @@ program
       await unoapi
         .api(urls)
         .on(() => {
-          console.log('开始生成代码...');
+          console.log('开始写入代码...');
         })
         .start({ funcName: options.funcName, output: options.output });
       process.exit(0);

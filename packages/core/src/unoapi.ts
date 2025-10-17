@@ -1,8 +1,8 @@
 import * as path from 'path';
-import { getDefaultCacheFile, UnoAPIConfig, DEFAULT_OUTPUT } from './config';
-import { parseUrl } from './utils/parse';
-import { GenerateCodeContext, TypeFieldOption, UnoAPIContext } from './types';
-import { printDefaultApi } from './utils/print';
+import { getDefaultCacheFile, UnoAPIConfig, DEFAULT_OUTPUT } from './config/index.js';
+import { parseUrl } from './utils/parse.js';
+import { GenerateCodeContext, TypeFieldOption, UnoAPIContext } from './types.js';
+import { printDefaultApi } from './utils/print.js';
 
 interface ParsedApi {
   url: string;
@@ -26,19 +26,19 @@ class UnoAPI {
   private rawData: any[] = []; // 文档原始数据
   private parsedApis: ParsedApi[] = []; // 解析后的数据
 
-  private urls: Set<string>; // 需要生成代码的接口 URL
+  private urls: Set<string> = new Set(); // 需要生成代码的接口 URL
 
-  private generateType: 'api' | 'model'; // 生成代码的类型
+  private generateType?: 'api' | 'model'; // 生成代码的类型
   private cacheModels: string[] = []; // 需要生成代码的模型名称
 
   private receiveHandler(codeContext: GenerateCodeContext): void | Promise<void> {
-    console.log('开始生成代码...');
+    console.log('开始写入代码...');
   }
 
   constructor(config: UnoAPIConfig) {
     this.config = config;
     // 加载文档数据
-    this.loadData();
+    this.parseData();
   }
 
   private get apiOutput() {
@@ -56,37 +56,35 @@ class UnoAPI {
     }
   }
 
-  private async loadData() {
+  private async parseData() {
     let { cacheFile } = this.config;
-    // await updateOpenAPIDoc();
     cacheFile = cacheFile || getDefaultCacheFile(this.apiOutput);
     console.log('加载文档数据，从缓存文件读取：', cacheFile);
+
     try {
+      // 预留多JSON文档支持
       this.rawData = [require(cacheFile)];
-      console.log('加载文档数据成功', this.rawData);
-      this.rawData.forEach(doc => {
-        if (doc && doc.paths) {
-          Object.keys(doc.paths).forEach((url) => {
-            Object.keys(doc.paths[url]).forEach(method => {
-              this.parsedApis.push({
-                url,
-                method,
-                summary: doc.paths[url][method].summary,
-                description: doc.paths[url][method].description,
-                tags: doc.paths[url][method].tags,
-                parameters: doc.paths[url][method].parameters,
-                requestBody: doc.paths[url][method].requestBody,
-                responses: doc.paths[url][method].responses,
-              });
-            });
-          });
-        }
-      });
+      // console.log('加载文档数据成功', this.rawData);
     } catch (error) {
-      console.error('加载文档数据失败，请先运行 unoapi update 命令生成文档数据');
+      console.error('加载文档数据失败，请先运行 unoapi update 命令生成文档数据', error);
       this.rawData = [];
       this.parsedApis = [];
     }
+
+    this.rawData.forEach(doc => {
+      if (doc?.paths) {
+        Object.keys(doc.paths).forEach((url) => {
+          Object.keys(doc.paths[url]).forEach(method => {
+            const apiObj = doc.paths[url][method];
+            this.parsedApis.push({
+              url,
+              method,
+              ...apiObj,
+            });
+          });
+        });
+      }
+    });
   }
 
   getUrlList(keywords?: string) {
@@ -212,7 +210,7 @@ class UnoAPI {
       const filePath = (dirName ? dirName + '/' : '') + fileName;
       await this.receiveHandler({
         sourceType: 'api',
-        sourceCode: apiContext.sourceCode,
+        sourceCode: apiContext.sourceCode!,
         fileName,
         fileDir: dirName,
         filePath,
