@@ -1,5 +1,6 @@
-import { SchemaProperty } from "../types.js";
+import { ReferenceObject, SchemaObject } from "openapi3-ts/oas30";
 import { formatObjName, isBaseType } from "./common.js";
+import { loadConfig } from "../config/index.js";
 
 /**
  * 解析URL路径
@@ -40,32 +41,16 @@ export function parseUrl(input: string) {
 
 /**
  * 解析属性类型
- * @param {SchemaProperty} property
+ * @param {string | SchemaObject | ReferenceObject} property
  * @param {Record<string, string>} typeMapping 类型映射表 { string: 'string', integer: 'number', ... }
  * @returns
  */
-export function parseToTsType(
-  property?: string | SchemaProperty,
-  typeMapping?: Record<string, string>
-): string {
-  if (typeof property !== 'string') {
-    // 数组类型
-    if (property?.type === 'array') {
-      const subType = property.items ? parseToTsType(property.items, typeMapping) : 'any';
-      return `${subType}[]`;
-    }
-
-    // 引用类型
-    if (property?.$ref) {
-      const name = formatObjName(property.$ref);
-      const parseType = parseToTsType(name, typeMapping);
-      return isBaseType(parseType) && parseType !== 'any' ? parseType : name;
-    }
-
-    property = property?.type;
-  }
-
-  const map = {
+export async function parseSchemaObject(
+  property?: string | SchemaObject | ReferenceObject,
+  receiveRefHandler?: (ref: string) => void,
+): Promise<string> {
+  const config = await loadConfig();
+  const typeMapping = {
     string: 'string',
     integer: 'number',
     int: 'number',
@@ -75,8 +60,34 @@ export function parseToTsType(
     number: 'number',
     boolean: 'boolean',
     object: 'object',
-    ...typeMapping,
+    ...config.typeMapping?.reduce((acc, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>),
   };
 
-  return map[property as keyof typeof map] || 'any';
+  function parse(property?: string | SchemaObject | ReferenceObject): string {
+    if (typeof property !== 'string') {
+      // 引用类型
+      const ref = (property as ReferenceObject)?.$ref;
+      if (ref) {
+        receiveRefHandler?.(ref);
+        const name = formatObjName(ref);
+        const parseType = parse(name);
+        return isBaseType(parseType) && parseType !== 'any' ? parseType : name;
+      }
+
+      // 数组类型
+      if ((property as SchemaObject)?.type === 'array') {
+        const subType = (property as SchemaObject).items ? parse((property as SchemaObject).items!) : 'any';
+        return `${subType}[]`;
+      }
+
+      property = (property as SchemaObject)?.type as string;
+    }
+
+    return typeMapping[property as keyof typeof typeMapping] || 'any';
+  }
+  
+  return parse(property);
 }

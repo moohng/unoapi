@@ -28,6 +28,9 @@
   "author": "moohng@前端星河",
   "license": "ISC",
   "dependencies": {
-    "esbuild": "0.25.11"
+    "esbuild": "^0.25.11"
+  },
+  "devDependencies": {
+    "openapi3-ts": "^4.5.0"
   }
 }

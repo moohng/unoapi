@@ -3,6 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { Cat } from './entities/cat.entity';
+import { Res } from './entities/res.entity';
 
 @ApiTags('cats')
 @Controller('cats')
@@ -17,7 +18,13 @@ export class CatsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Cat {
-    return this.catsService.findOne(+id);
+  @ApiOperation({ summary: '获取指定 ID 的 Cat', description: '根据提供的 ID 获取对应的 Cat 实体' })
+  @ApiResponse({ status: 200, description: '成功获取 Cat 实体', type: Res<Cat> })
+  findOne(@Param('id') id: string): Res<Cat> {
+    return {
+      code: 200,
+      message: 'Success',
+      data: this.catsService.findOne(+id),
+    };
   }
 }

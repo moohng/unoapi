@@ -6,6 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
+    .setOpenAPIVersion('2.0.0')
     .setTitle('Cats example')
     .setDescription('The cats API description')
     .setVersion('1.0')

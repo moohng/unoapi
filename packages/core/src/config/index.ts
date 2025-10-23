@@ -1,24 +1,19 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as esbuild from 'esbuild';
-import { UnoAPIContext } from '../types.js';
-
-/**
- * OpenAPI JSON 文档
- */
-interface OpenAPIJsonDoc {
-  paths: Record<string, object>;
-  components?: [];
-}
+import Module from 'module';
+import { UnoContext } from '../types.js';
+import { existsPath } from '../utils/common.js';
+import { OpenAPIObject } from 'openapi3-ts/oas30';
 
 /**
  * UnoAPI 配置项
  */
-export interface UnoAPIConfig {
+export interface UnoUserConfig {
   /**
    * OpenAPI URL 地址，可以是字符串或返回字符串的函数
    */
-  openapiUrl: string | (() => Promise<OpenAPIJsonDoc> | OpenAPIJsonDoc);
+  openapiUrl: string | (() => Promise<OpenAPIObject> | OpenAPIObject);
   /**
    * 输出目录，默认 src/api；数组表示models输出目录
    */
@@ -28,7 +23,13 @@ export interface UnoAPIConfig {
    */
   cacheFile?: string;
   typeMapping?: string[][];
-  funcTpl?: (context: UnoAPIContext) => string | Promise<string> | UnoAPIContext | Promise<UnoAPIContext>;
+  funcTpl?: (context: UnoContext) => string | Promise<string> | UnoContext | Promise<UnoContext>;
+}
+
+export interface UnoConfig extends UnoUserConfig {
+  output: string;
+  modelOutput: string;
+  cacheFile: string;
 }
 
 /**
@@ -36,42 +37,10 @@ export interface UnoAPIConfig {
  * @param config
  * @returns 
  */
-export async function defineUnoAPIConfig(config: UnoAPIConfig | (() => UnoAPIConfig | Promise<UnoAPIConfig>)) {
+export async function defineUnoConfig(config: UnoUserConfig | (() => UnoUserConfig | Promise<UnoUserConfig>)) {
   if (typeof config === 'function') {
     config = await config();
   }
-  return checkConfig(config);
-}
-
-/**
- * 检查并处理配置项
- * @param config 配置项
- * @returns 
- */
-function checkConfig(config: UnoAPIConfig) {
-  if (!config.openapiUrl) {
-    throw new Error('openapiUrl is required');
-  }
-
-  if (typeof config.output === 'string') {
-    if (!path.isAbsolute(config.output)) {
-      config.output = path.join(process.cwd(), config.output);
-    }
-  } else if (Array.isArray(config.output)) {
-    config.output = config.output.map(dir => {
-      if (!path.isAbsolute(dir)) {
-        dir = path.join(process.cwd(), dir);
-      }
-      return dir;
-    }) as [string, string];
-  }
-
-  if (config.cacheFile) {
-    if (!path.isAbsolute(config.cacheFile)) {
-      config.cacheFile = path.join(process.cwd(), config.cacheFile);
-    }
-  }
-
   return config;
 }
 
@@ -79,14 +48,14 @@ function checkConfig(config: UnoAPIConfig) {
 const CONFIG_PATH = process.cwd() + '/unoapi.config.ts';
 
 /** 默认输出目录 */
-export const DEFAULT_OUTPUT = 'src/api';
+const DEFAULT_OUTPUT = 'src/api';
 
 /**
  * 获取默认缓存文件路径
  * @param output 输出目录
  * @returns 
  */
-export function getDefaultCacheFile(output = DEFAULT_OUTPUT) {
+function getDefaultCacheFile(output = DEFAULT_OUTPUT) {
   if (!path.isAbsolute(output)) {
     output = path.join(process.cwd(), output || DEFAULT_OUTPUT);
   }
@@ -104,28 +73,83 @@ export async function generateConfigFile(url?: string) {
   await fs.writeFile(CONFIG_PATH, configContent, 'utf-8');
 }
 
+interface NodeModuleWithCompile extends NodeModule {
+  _compile(code: string, filename: string): any;
+}
+
+let prevMtime: number = 0;
+let cachedConfig: UnoConfig;
+
 /**
  * 加载配置文件（支持 ts-node）
  * @returns
  */
-export async function loadConfig(): Promise<UnoAPIConfig> {
-  // const tsNode = await import('ts-node');
-  // tsNode.register({
-  //   transpileOnly: true,
-  //   compilerOptions: {
-  //     module: 'commonjs'
-  //   }
-  // });
-  const tmpFile = path.resolve('unoapi.config.js');
-  await esbuild.build({
+export async function loadConfig(): Promise<UnoConfig> {
+  // 判断文件内容是否更改
+  const stat = await fs.stat(CONFIG_PATH);
+  if (prevMtime === stat.mtimeMs && cachedConfig) {
+    return cachedConfig;
+  }
+
+  prevMtime = stat.mtimeMs;
+
+  const result = await esbuild.build({
     entryPoints: [CONFIG_PATH],
     platform: 'node',
     format: 'cjs',
-    outfile: tmpFile,
+    write: false,
   });
-  const mod = await import(`file://${tmpFile}`);
-  fs.rm(tmpFile);
-  return mod.default.default || mod;
+  
+  const module = new Module('unoapi.config.ts') as NodeModuleWithCompile;
+  // @ts-ignore
+  module.paths = Module._nodeModulePaths(process.cwd());
+  module._compile(result.outputFiles[0].text, 'unoapi.config.ts');
+
+  cachedConfig = checkConfig(await module.exports.default);
+  return cachedConfig;
+}
+
+/**
+ * 检查并处理配置项
+ * @param config 配置项
+ * @returns 
+ */
+function checkConfig(config: UnoUserConfig): UnoConfig {
+  console.log('加载配置', config);
+  if (!config.openapiUrl) {
+    throw new Error('openapiUrl is required');
+  }
+
+  const localConfig: UnoConfig = { ...config } as UnoConfig;
+
+  if (typeof config.output === 'string') {
+    if (!path.isAbsolute(config.output)) {
+      localConfig.output = path.join(process.cwd(), config.output);
+    }
+    localConfig.modelOutput = localConfig.output;
+  } else if (Array.isArray(config.output)) {
+    config.output = config.output.map(dir => {
+      if (!path.isAbsolute(dir)) {
+        dir = path.join(process.cwd(), dir);
+      }
+      return dir;
+    }) as [string, string];
+    localConfig.output = config.output[0];
+    localConfig.modelOutput = config.output[1];
+  } else {
+    localConfig.output = path.join(process.cwd(), DEFAULT_OUTPUT);
+    localConfig.modelOutput = localConfig.output;
+  }
+
+  if (config.cacheFile) {
+    if (!path.isAbsolute(config.cacheFile)) {
+      localConfig.cacheFile = path.join(process.cwd(), config.cacheFile);
+    }
+  } else {
+    localConfig.cacheFile = getDefaultCacheFile(localConfig.output);
+  }
+
+  return localConfig;
 }
 
 /**
@@ -133,5 +157,5 @@ export async function loadConfig(): Promise<UnoAPIConfig> {
  * @returns
  */
 export async function existsConfig() {
-  return fs.access(CONFIG_PATH).then(() => true).catch(() => false);
+  return await existsPath(CONFIG_PATH);
 }

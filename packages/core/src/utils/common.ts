@@ -1,3 +1,5 @@
+import * as fs from 'fs/promises';
+
 /**
  * 去掉后端对象名中的非法字符
  * 比如：com.xxx.common.dto2.ResponseDTO«List«ActivityListVO对象»»     ======>     ResponseDTO<List<ActivityListVO>>
@@ -20,4 +22,28 @@ export function formatObjName(objName: string) {
  */
 export function isBaseType(type: string) {
   return ['string', 'number', 'boolean', 'object', 'any', 'unknown'].includes(type);
+}
+
+/**
+ * 首字母大写
+ * @param str 
+ * @returns 
+ */
+export function upperFirst(str: string) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * 判断路径是否存在
+ * @param filePath 
+ * @returns 
+ */
+export async function existsPath(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }

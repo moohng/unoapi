@@ -1,29 +1,27 @@
+import { ParameterObject } from "openapi3-ts/oas30";
+
+export type HTTPMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options';
+
 /**
  * UnoAPI 上下文
  */
-export interface UnoAPIContext {
+export interface UnoContext {
   sourceCode?: string;
   /** 默认取URL最后一段 */
   name: string;
   url: string;
-  method: string;
-  inType?: string;
-  outType?: string;
+  method: HTTPMethod;
   comment?: string;
   pathParams?: TypeFieldOption[];
+  queryType?: string;
+  bodyType?: string;
+  responseType?: string;
 }
 
 /**
  * 类型字段选项
  */
-export interface TypeFieldOption {
-  name: string;
-  type?: string;
-  required?: boolean;
-  description?: string;
-  minLength?: number;
-  maxLength?: number;
-}
+export type TypeFieldOption = Omit<ParameterObject, 'in'>;
 
 export interface SchemaProperty {
   type?: 'string' | 'integer' | 'boolean' | 'object' | 'array';
@@ -42,10 +40,10 @@ export interface GenerateCodeContext {
   funcName?: string;
   /** 类型名称 Abc */
   typeName?: string;
-  /** abc.ts */
+  /** 文件名称 abc.ts */
   fileName: string;
-  /** d:\workspaces\unoapi\src\api */
+  /** 文件相对目录 users */
   fileDir?: string;
-  /** d:\workspaces\unoapi\src\api\abc.ts */
+  /** 文件相对路径 users/abc.ts */
   filePath?: string;
 }

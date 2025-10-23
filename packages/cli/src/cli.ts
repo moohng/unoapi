@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateOpenAPIDoc, createUnoAPI, loadConfig } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateOpenAPIDoc, createUnoAPI, loadConfig, appendToFile, writeToFile, writeToIndexFile, searchApi } from '@unoapi/core';
 
 const program = new Command();
 
@@ -59,9 +60,10 @@ program
       console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
       process.exit(1);
     }
+
     const config = await loadConfig();
     console.log('配置文件', config);
-    const unoapi = createUnoAPI(config);
+    const unoapi = await createUnoAPI(config);
 
     if (options.all) {
       // 生成所有接口的代码
@@ -70,10 +72,17 @@ program
       // 让用户选择
       const selectedUrl = await inquirer.search<string>({
         message: '使用关键字搜索接口：',
-        source: async (term) => unoapi.getUrlList(term || ''),
+        source: async (term) => searchApi(term || ''),
         pageSize: 10,
       });
       urls = [selectedUrl];
+      // 函数名称
+      if (!options.funcName) {
+        const funcName = await inquirer.input({
+          message: '请输入自定义函数名称（可选）：',
+        });
+        options.funcName = funcName;
+      }
     }
 
     console.log('urls：', urls);
@@ -81,8 +90,16 @@ program
     try {
       await unoapi
         .api(urls)
-        .on(() => {
-          console.log('开始写入代码...');
+        .on(async (codeContext) => {
+          if (codeContext.sourceType === 'api') {
+            const filePath = path.resolve(options.output || config.output, codeContext.filePath!);
+            await appendToFile(filePath, codeContext.sourceCode);
+          } else {
+            const modelDir = path.resolve(options.output || config.modelOutput, codeContext.fileDir);
+            const filePath = path.resolve(modelDir, codeContext.fileName);
+            await writeToFile(filePath, codeContext.sourceCode);
+            await writeToIndexFile(codeContext.typeName!, path.resolve(modelDir), filePath);
+          }
         })
         .start({ funcName: options.funcName, output: options.output });
       process.exit(0);

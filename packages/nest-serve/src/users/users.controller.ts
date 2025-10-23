@@ -17,7 +17,7 @@ import { UserCreate } from './dto/user-create.dto';
 import { UserUpdate } from './dto/user-update.dto';
 import { ResetPasswordRequest } from './dto/reset-password.dto';
 import { User } from './entities/user.entity';
-import { ApiOkResponse, ApiOperation, ApiTags, ApiConsumes } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags, ApiConsumes, ApiQuery, ApiParam } from '@nestjs/swagger';
 
 @Controller('users')
 @ApiTags('用户')
@@ -47,6 +47,7 @@ export class UsersController {
 
   @Get('search')
   @ApiOperation({ summary: '搜索用户' })
+  @ApiQuery({ name: 'q', required: false, description: '搜索关键词（姓名或邮箱）' })
   @ApiOkResponse({ description: '搜索结果', type: [User] })
   search(@Query('q') q?: string, @Query('page') page?: number) {
     return this.usersService.search(q, page);
@@ -54,6 +55,7 @@ export class UsersController {
 
   @Get(':id')
   @ApiOperation({ summary: '获取指定用户信息' })
+  @ApiParam({ name: 'id', description: '用户ID' })
   @ApiOkResponse({ description: '用户信息', type: User })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
