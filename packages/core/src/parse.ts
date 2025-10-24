@@ -45,7 +45,6 @@ export function parseUrl(input: string) {
 /**
  * 解析属性类型
  * @param {string | SchemaObject | ReferenceObject} property
- * @param {Record<string, string>} typeMapping 类型映射表 { string: 'string', integer: 'number', ... }
  * @returns
  */
 export async function parseSchemaObject(property?: string | SchemaObject | ReferenceObject) {

@@ -85,11 +85,11 @@ program
       });
       urls = [selectedUrl];
       // 函数名称
-      if (!options.funcName) {
+      if (!options.func) {
         const funcName = await inquirer.input({
           message: '请输入自定义函数名称（可选）：',
         });
-        options.funcName = funcName;
+        options.func = funcName;
       }
     }
 
@@ -114,8 +114,9 @@ program
       } else {
         codeContextResults = await generateCode(urls, { funcTpl: config.funcTpl });
       }
+
       for (const codeContext of codeContextResults) {
-        console.log('生成代码：', codeContext.filePath);
+        console.log('写入代码到：', codeContext.filePath);
         if (codeContext.sourceType === 'api') {
           const filePath = path.resolve(options.output || config.output, codeContext.filePath!);
           await appendToFile(filePath, codeContext.sourceCode);

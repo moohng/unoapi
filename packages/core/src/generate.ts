@@ -3,11 +3,12 @@ import { ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, Sc
 import { parseSchemaObject, parseUrl } from './parse.js';
 import { formatObjName, upperFirst } from './tools.js';
 import {
-  transformTypeInterfaceCode,
+  transformQueryCode,
   transformApiCode,
   ApiOperationObject,
   TypeFieldOption,
   ApiCodeContext,
+  transformModelCode,
 } from './transform.js';
 import { loadDoc, searchApi } from './doc.js';
 import { FuncTplCallback } from './config.js';
@@ -81,7 +82,7 @@ interface GenerateSingleOptions extends GenerateOptions {
  * @param options 生成选项
  */
 export async function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
-  console.log(`生成单个API代码：[${parsedApi.method}]${parsedApi.path}`);
+  console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
 
   let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
 
@@ -145,7 +146,7 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
     // 生成 query 类型
     if (queryParams.length) {
       queryTypeName = `${upperFirst(fileNameWithoutExt)}${upperFirst(funcName)}Query`;
-      const { code, refs } = await transformTypeInterfaceCode(queryParams, queryTypeName);
+      const { code, refs } = await transformQueryCode(queryParams, queryTypeName);
       apiRefs.push(...refs);
       const fileFullName = `${queryTypeName}.ts`;
       const queryFileDir = path.join(dirName || '', 'query');
@@ -263,68 +264,21 @@ async function generateModelCode(refs: string[]): Promise<GenerateCodeContext[]>
 
     // 对象名称
     let objName = formatObjName(refKey);
-    const { required, properties, description: objDesc } = modelObj as SchemaObject;
+    const { properties } = modelObj as SchemaObject;
     if (!objName || !properties || /^[a-z]/.test(objName)) {
       return;
     }
 
     // 拼接代码
-    let codeStr = `export default interface ${objName} {\n  // @UNOAPI[${refKey}]\n`;
-    if (objDesc) {
-      codeStr = `/** ${objDesc} */\n${codeStr}`;
+    const { code, refs } = await transformModelCode(modelObj as SchemaObject, refKey);
+    for (const subRef of refs) {
+      allRefsSet.add(subRef);
     }
-
-    // 外部引用类型
-    const importRefKeys = new Set<string>();
-
-    // 遍历属性
-    for (const propKey in properties) {
-      // 定义属性
-      const property = properties[propKey];
-
-      let { type: tsType, refs: subRefs } = await parseSchemaObject(property);
-      for (const subRef of subRefs) {
-        allRefsSet.add(subRef);
-        importRefKeys.add(subRef.replace('#/components/schemas/', ''));
-      }
-
-      const isRequired = required?.includes(propKey);
-      // 过滤掉一些非法字符 如：key[]
-      let propStr = `  ${propKey.replace(/\W/g, '')}${isRequired ? '' : '?'}: ${tsType};\n`;
-
-      // 添加注释
-      const { description, minLength, maxLength } = property as SchemaObject;
-      const descriptionComment = description ? ` ${description} ` : '';
-      const minComment = minLength ? ` 最小长度：${minLength} ` : '';
-      const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
-      if (descriptionComment || minComment || maxComment) {
-        const comment = `  /**${descriptionComment}${minComment}${maxComment}*/`;
-        propStr = `${comment}\n${propStr}`;
-      }
-
-      // 拼接属性
-      codeStr += propStr;
-    }
-
-    codeStr += '}\n';
-
-    // 导入外部类型
-    let importStr = '';
-    for (const importRefKey of importRefKeys) {
-      const importType = formatObjName(importRefKey);
-      if (refKey !== importRefKey) {
-        importStr = `${importStr}import ${importType} from './${importType}';\n`;
-      }
-    }
-    if (importStr) {
-      codeStr = `${importStr}\n${codeStr}`;
-    }
-
+    
     const fileFullName = `${objName}.ts`;
-
     allContextList.push({
       sourceType: 'model',
-      sourceCode: codeStr,
+      sourceCode: code,
       typeName: objName,
       fileName: objName,
       fileFullName,

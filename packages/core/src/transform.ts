@@ -1,5 +1,6 @@
 import { OperationObject, ParameterObject, SchemaObject } from 'openapi3-ts/oas30';
 import { parseSchemaObject } from './parse.js';
+import { formatObjName } from './tools.js';
 
 export type HTTPMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options';
 
@@ -63,7 +64,7 @@ export async function transformTypeFieldCode(obj: TypeFieldOption | string) {
  * @param name
  * @returns
  */
-export async function transformTypeInterfaceCode(params: TypeFieldOption[], name: string) {
+export async function transformQueryCode(params: TypeFieldOption[], name: string) {
   const codes: string[] = [];
   const allRefs: string[] = [];
   for (const param of params) {
@@ -74,6 +75,71 @@ export async function transformTypeInterfaceCode(params: TypeFieldOption[], name
   let codeStr = codes.join('\n');
   codeStr = `export default interface ${name} {\n${codeStr}\n}\n`;
   return { code: codeStr, refs: allRefs };
+}
+
+/**
+ * 生成模型接口代码
+ * @param modelObj 
+ * @param refKey 
+ * @returns 
+ */
+export async function transformModelCode(modelObj: SchemaObject, refKey: string) {
+  const { required, properties, description: objDesc } = modelObj as SchemaObject;
+
+  let objName = formatObjName(refKey);
+  let codeStr = `export default interface ${objName} {\n  // @UNOAPI[${refKey}]\n`;
+  if (objDesc) {
+    codeStr = `/** ${objDesc} */\n${codeStr}`;
+  }
+
+  // 外部引用类型
+  const importRefKeys = new Set<string>();
+  const refs: string[] = [];
+
+  // 遍历属性
+  for (const propKey in properties) {
+    // 定义属性
+    const property = properties[propKey];
+
+    let { type: tsType, refs: subRefs } = await parseSchemaObject(property);
+    for (const subRef of subRefs) {
+      refs.push(subRef);
+      importRefKeys.add(subRef.replace('#/components/schemas/', ''));
+    }
+
+    const isRequired = required?.includes(propKey);
+    // 过滤掉一些非法字符 如：key[]
+    let propStr = `  ${propKey.replace(/\W/g, '')}${isRequired ? '' : '?'}: ${tsType};\n`;
+
+    // 添加注释
+    const { description, minLength, maxLength } = property as SchemaObject;
+    const descriptionComment = description ? ` ${description} ` : '';
+    const minComment = minLength ? ` 最小长度：${minLength} ` : '';
+    const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
+    if (descriptionComment || minComment || maxComment) {
+      const comment = `  /**${descriptionComment}${minComment}${maxComment}*/`;
+      propStr = `${comment}\n${propStr}`;
+    }
+
+    // 拼接属性
+    codeStr += propStr;
+  }
+
+  codeStr += '}\n';
+
+  // 导入外部类型
+  let importStr = '';
+  for (const importRefKey of importRefKeys) {
+    const importType = formatObjName(importRefKey);
+    if (refKey !== importRefKey) {
+      importStr = `${importStr}import ${importType} from './${importType}';\n`;
+    }
+  }
+  if (importStr) {
+    codeStr = `${importStr}\n${codeStr}`;
+  }
+
+  return { code: codeStr, refs };
 }
 
 /**
