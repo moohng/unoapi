@@ -117,7 +117,6 @@ export async function loadConfig(): Promise<UnoConfig> {
  * @returns
  */
 function checkConfig(config: UnoUserConfig): UnoConfig {
-  console.log('加载配置', config);
   if (!config.openapiUrl) {
     throw new Error('openapiUrl is required');
   }

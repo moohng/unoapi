@@ -30,7 +30,7 @@ export function parseUrl(input: string) {
   // api函数名
   const funcName = validUrlSplitArr.pop() || 'index';
   // 文件名
-  const fileName = validUrlSplitArr.pop() || 'common';
+  const fileName = validUrlSplitArr.pop() || 'index';
   // 目录名
   const dirName = validUrlSplitArr.join('/');
 

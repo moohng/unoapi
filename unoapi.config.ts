@@ -1,7 +1,7 @@
 import { defineUnoConfig } from '@unoapi/core';
 
 export default defineUnoConfig({
-  openapiUrl: 'https://unoapi.codingmo.com/api-json', // 支持返回 Promise 的回调函数
+  openapiUrl: 'http://localhost:8080/v3/api-docs', // 支持返回 Promise 的回调函数
   output: 'examples/api', // 如需单独指定模型输出目录：['src/api', 'src/models'],
   cacheFile: 'src/api/.openapi-cache.json', // 缓存目录
   // typeMapping: [['DateTime', 'string'], [...]], // 自定义类型映射优先

@@ -83,23 +83,27 @@ export async function transformTypeInterfaceCode(params: TypeFieldOption[], name
  */
 export async function transformApiCode(apiContext: ApiCodeContext) {
   const { queryType, bodyType, responseType, comment, name, url, method, pathParams } = apiContext;
+
   let paramStr = bodyType || queryType ? `data: ${bodyType || queryType}` : '';
   let urlStr = `'${url}'`;
   if (pathParams?.length) {
     let codeStr = (await Promise.all(pathParams.map((item) => transformTypeFieldCode(item))))
-      .map((item) => item.code)
+      .map((item) => item.code.trim())
       .join(' ');
     paramStr = `params: { ${codeStr} }${paramStr ? ', ' + paramStr : ''}`;
     // 转换 url
     const paramUrl = url.replace(/\{(.*?)\}/g, (_, $1) => `\${params.${$1}}`);
     urlStr = `\`${paramUrl}\``;
   }
-  const resStr = responseType?.includes('List<') ? `${responseType.match(/List<(.*)>/)![1]}[]` : responseType;
+
+  const resStr = responseType ? `<${responseType}>` : '';
+
   let apiFuncStr = `
 export function ${name}(${paramStr}) {
-  return request<${resStr}>({ url: ${urlStr},${bodyType || queryType ? ' data,' : ''} method: '${method.toUpperCase()}' });
+  return request${resStr}({ url: ${urlStr},${bodyType || queryType ? ' data,' : ''} method: '${method.toUpperCase()}' });
 }
 `;
+
   if (comment) {
     apiFuncStr =
       `
@@ -114,5 +118,28 @@ export function ${name}(${paramStr}) {
  * @UNOAPI[${method}:${url}]
  */` + apiFuncStr;
   }
+
   return apiFuncStr;
+}
+
+export interface ImportTypeItem {
+  typeName: string;
+  path: string;
+}
+
+/**
+ * 生成类型索引代码
+ * @param imports
+ * @returns
+ */
+export function transformTypeIndexCode(imports: ImportTypeItem[]) {
+  let importStr = '';
+  let typeStr = 'declare global {\n';
+  for (const item of imports) {
+    importStr += `import _${item.typeName} from '${item.path}';\n`;
+    typeStr += `  type ${item.typeName} = _${item.typeName};\n`;
+  }
+  typeStr += '}\n';
+
+  return importStr + '\n' + typeStr;
 }

@@ -55,14 +55,13 @@ program
   .option('--func <funcName>', '自定义 API 函数名称')
   .option('--all', '生成所有接口的代码')
   .action(async (urls, options) => {
-    console.log('生成 API 代码', options);
+    console.log('开始生成 API 代码...');
     if (!await existsConfig()) {
       console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
       process.exit(1);
     }
 
     const config = await loadConfig();
-    console.log('配置文件', config);
 
     if (options.all) {
       // 生成所有接口的代码
@@ -75,13 +74,10 @@ program
         source: async (term) => {
           const apis = await searchApi(doc, term);
           return apis.map(api => {
-            // const tag = api.tags?.join(',');
-            // return `[${api.method.toUpperCase()}] ${api.path} ${tag ? (tag + ': ') : ''}${[api.summary, api.description].join('-')}`;
             const methodStr = `[${api.method.toUpperCase()}]`;
             return {
               value: api,
-              name: `${methodStr.padEnd(9)}${api.path}`,
-              description: [api.summary, api.description].filter(Boolean).join(' - ') || api.path,
+              name: `${methodStr.padEnd(9)}${api.path} ${[api.summary, api.description].filter(Boolean).join(' - ')}`,
             };
           }); // 显示方法和路径
         },
@@ -100,6 +96,17 @@ program
     try {
       let codeContextResults: GenerateCodeContext[] = [];
       if (urls.length === 1) {
+        if (typeof urls[0] === 'string') {
+          // 载入文档，查找对应接口
+          const doc = await loadDoc();
+          const apis = await searchApi(doc);
+          const matched = apis.filter((item) => item.path === urls[0]);
+          if (matched.length === 0) {
+            console.error(`未找到匹配的接口：${urls[0]}`);
+            process.exit(1);
+          }
+          urls[0] = matched[0];
+        }
         codeContextResults = await generateSingleApiCode(urls[0] as ApiOperationObject, {
           funcName: options.func,
           funcTpl: config.funcTpl,
@@ -114,8 +121,8 @@ program
           await appendToFile(filePath, codeContext.sourceCode);
         } else {
           const modelDir = path.resolve(options.output || config.modelOutput, codeContext.fileDir);
-          const filePath = path.resolve(modelDir, codeContext.fileName);
-          await writeToFile(filePath, codeContext.sourceCode);
+          const filePath = path.resolve(modelDir, codeContext.fileFullName);
+          writeToFile(filePath, codeContext.sourceCode);
           await writeToIndexFile(codeContext.typeName!, path.resolve(modelDir), filePath);
         }
       }

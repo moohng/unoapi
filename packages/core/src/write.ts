@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { existsPath } from './tools.js';
+import { ImportTypeItem, transformTypeIndexCode } from './transform.js';
 
 /**
  * 写入文件
@@ -49,20 +50,26 @@ export async function writeToIndexFile(typeName: string, outDir: string, filePat
     relativePath = relativePath ? `./${relativePath}` : '.';
   }
 
+  const imports = [{ typeName, path: `${relativePath}/${typeName}` }];
+
   // 新建
   if (!(await existsPath(modelFilePath))) {
     await fs.mkdir(path.dirname(modelFilePath), { recursive: true });
-    await fs.writeFile(modelFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
-
-    return modelFilePath;
+  } else {
+    let modelFileContent = await fs.readFile(modelFilePath, 'utf-8');
+    // 判断是否已经导入
+    if (modelFileContent.indexOf('type ' + typeName + ' ') === -1) {
+      const matched = modelFileContent.matchAll(/import\s_(.+)\sfrom\s['"](.+)['"]/g);
+      const oldImports: ImportTypeItem[] = [];
+      for (const m of matched) {
+        oldImports.push({ typeName: m[1], path: m[2] });
+      }
+      imports.unshift(...oldImports);
+    }
   }
 
-  let modelFileContent = await fs.readFile(modelFilePath, 'utf-8');
-  // 判断是否已经导入
-  if (modelFileContent.indexOf('as ' + typeName + ' ') === -1) {
-    // 追加
-    await fs.appendFile(modelFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
-  }
+  const code = transformTypeIndexCode(imports);
+  await fs.writeFile(modelFilePath, code, 'utf-8');
 
   return modelFilePath;
 }

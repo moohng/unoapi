@@ -83,11 +83,20 @@ interface GenerateSingleOptions extends GenerateOptions {
 export async function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
   console.log(`生成单个API代码：[${parsedApi.method}]${parsedApi.path}`);
 
-  const { funcName: urlFuncName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
+  let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
+
+  // 文件名称
+  const tagName = parsedApi.tags?.[0];
+  if (tagName && /^[\w\s-]+$/.test(tagName)) {
+    fileNameWithoutExt = tagName.split(/[\s-_]/)
+      .filter(item => item && item.toLowerCase() !== 'controller')
+      .map((item, index) => index === 0 ? item.toLowerCase() : upperFirst(item))
+      .join('');
+  }
 
   // 函数名称
-  const defaultFuncName = parsedApi.operationId?.split(/[\s-_]/).pop() || urlFuncName;
-  const funcName = options?.funcName || defaultFuncName;
+  const defaultFuncName = parsedApi.operationId?.split(/[\s-_]/).pop();
+  funcName = options?.funcName || defaultFuncName || funcName;
 
   // path 参数
   const pathParams: TypeFieldOption[] = pathStrParams.map((name) => ({
@@ -155,7 +164,7 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
   }
 
   // 出参
-  let responseTypeName = 'any';
+  let responseTypeName = '';
   for (const key in parsedApi.responses) {
     if (key.startsWith('2')) {
       const resp = parsedApi.responses[key] as ResponseObject;

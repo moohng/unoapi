@@ -1,517 +1,207 @@
 {
-  "openapi": "3.0.0",
-  "paths": {
-    "/cats": {
-      "post": {
-        "description": "创建一个新的 Cat 实体并返回它",
-        "operationId": "CatsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCatDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The cat has been successfully created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Cat"
-                }
-              }
-            }
-          }
-        },
-        "summary": "创建一个 Cat",
-        "tags": [
-          "cats"
-        ]
-      }
-    },
-    "/cats/{id}": {
-      "get": {
-        "operationId": "CatsController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "cats"
-        ]
-      }
-    },
-    "/users": {
-      "get": {
-        "operationId": "UsersController_findAll",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "用户数组",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "获取用户列表",
-        "tags": [
-          "用户"
-        ]
-      },
-      "post": {
-        "operationId": "UsersController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "用户创建成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          }
-        },
-        "summary": "创建用户",
-        "tags": [
-          "用户"
-        ]
-      }
-    },
-    "/users/batch": {
-      "post": {
-        "operationId": "UsersController_batchCreate",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "批量创建成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "批量创建用户",
-        "tags": [
-          "用户"
-        ]
-      }
-    },
-    "/users/search": {
-      "get": {
-        "operationId": "UsersController_search",
-        "parameters": [
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "搜索结果",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "搜索用户",
-        "tags": [
-          "用户"
-        ]
-      }
-    },
-    "/users/{id}": {
-      "get": {
-        "operationId": "UsersController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "用户信息",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          }
-        },
-        "summary": "获取指定用户信息",
-        "tags": [
-          "用户"
-        ]
-      },
-      "put": {
-        "operationId": "UsersController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "更新用户信息",
-        "tags": [
-          "用户"
-        ]
-      },
-      "delete": {
-        "operationId": "UsersController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "删除用户",
-        "tags": [
-          "用户"
-        ]
-      }
-    },
-    "/users/{id}/reset-password": {
-      "post": {
-        "operationId": "UsersController_resetPassword",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetPasswordRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "重置用户密码",
-        "tags": [
-          "用户"
-        ]
-      }
-    },
-    "/users/{id}/avatar": {
-      "put": {
-        "operationId": "UsersController_uploadAvatar",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "上传/更新用户头像",
-        "tags": [
-          "用户"
-        ]
-      }
-    },
-    "/auth/login": {
-      "post": {
-        "operationId": "AuthController_login",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "登录成功，返回 Token"
-          }
-        },
-        "summary": "用户登录",
-        "tags": [
-          "认证"
-        ]
-      }
-    }
-  },
+  "openapi": "3.1.0",
   "info": {
-    "title": "Cats example",
-    "description": "The cats API description",
-    "version": "1.0",
-    "contact": {}
+    "title": "OpenAPI definition",
+    "version": "v0"
   },
-  "tags": [
+  "servers": [
     {
-      "name": "cats",
-      "description": ""
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
     }
   ],
-  "servers": [],
-  "components": {
-    "schemas": {
-      "CreateCatDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The name of the cat"
+  "tags": [
+    {
+      "name": "create",
+      "description": "创建用户"
+    },
+    {
+      "name": "user",
+      "description": "用户相关操作"
+    }
+  ],
+  "paths": {
+    "/client/user/{id}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "获取用户信息",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           },
-          "age": {
-            "type": "number",
-            "description": "The age of the cat in years",
-            "minimum": 3
+          {
+            "name": "name",
+            "in": "query",
+            "description": "用户名",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "用户名"
+            }
           },
-          "breed": {
-            "type": "string",
-            "description": "The breed of the cat",
-            "maxLength": 50
+          {
+            "name": "age",
+            "in": "query",
+            "description": "年龄",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "description": "年龄"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "邮箱",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "邮箱"
+            }
           }
-        },
-        "required": [
-          "name",
-          "age",
-          "breed"
-        ]
-      },
-      "Cat": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Whiskers",
-            "description": "The name of the cat"
-          },
-          "age": {
-            "type": "number",
-            "example": 3,
-            "description": "The age of the cat in years"
-          },
-          "breed": {
-            "type": "string",
-            "example": "Tabby",
-            "description": "The breed of the cat"
-          }
-        },
-        "required": [
-          "name",
-          "age",
-          "breed"
-        ]
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "用户ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "用户名"
-          },
-          "email": {
-            "type": "string",
-            "description": "邮箱"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "description": "头像地址"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ]
-      },
-      "UserCreate": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "用户名"
-          },
-          "password": {
-            "type": "string",
-            "description": "密码"
-          },
-          "email": {
-            "type": "string",
-            "description": "邮箱"
-          }
-        },
-        "required": [
-          "name",
-          "password"
-        ]
-      },
-      "UserUpdate": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "用户名"
-          },
-          "email": {
-            "type": "string",
-            "description": "邮箱"
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultUserUpdateDto"
+                }
+              }
+            }
           }
         }
       },
-      "ResetPasswordRequest": {
-        "type": "object",
-        "properties": {
-          "newPassword": {
-            "type": "string",
-            "description": "新密码"
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "summary": "更新用户信息",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateDto"
+              }
+            }
+          },
+          "required": true
         },
-        "required": [
-          "newPassword"
-        ]
-      },
-      "LoginRequest": {
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultUserUpdateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/client/user": {
+      "post": {
+        "tags": [
+          "create",
+          "user"
+        ],
+        "summary": "创建用户",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultUserUpdateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserUpdateDto": {
         "type": "object",
+        "description": "更新用户信息的DTO",
         "properties": {
+          "name": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "age": {
+            "type": "integer",
+            "format": "int32",
+            "description": "年龄"
+          },
           "email": {
             "type": "string",
             "description": "邮箱"
-          },
-          "password": {
-            "type": "string",
-            "description": "密码"
           }
         },
         "required": [
-          "email",
-          "password"
+          "age",
+          "name"
         ]
+      },
+      "ApiResultUserUpdateDto": {
+        "type": "object",
+        "description": "通用响应结构",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "提示消息",
+            "example": "OK"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserUpdateDto",
+            "description": "数据载体"
+          }
+        }
       }
     }
   }
