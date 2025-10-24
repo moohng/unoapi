@@ -2,7 +2,7 @@
 import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateOpenAPIDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateCodeContext } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateCodeContext } from '@unoapi/core';
 
 const program = new Command();
 
@@ -38,8 +38,15 @@ program
   .command('update')
   .description('更新 OpenAPI 文档')
   .action(async () => {
+    if (!await existsConfig()) {
+      console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
+      process.exit(1);
+    }
+
+    const config = await loadConfig();
+
     try {
-      await updateOpenAPIDoc();
+      await updateDoc(config.openapiUrl, config.cacheFile);
     } catch (error) {
       console.error('操作失败：', error);
       process.exit(1);
@@ -62,13 +69,13 @@ program
     }
 
     const config = await loadConfig();
+    const doc = loadDoc(config.cacheFile);
 
     if (options.all) {
       // 生成所有接口的代码
       urls = [];
     } else if (urls?.length === 0) {
       // 让用户选择
-      const doc = await loadDoc();
       const selectedUrl = await inquirer.search<ApiOperationObject>({
         message: '使用关键字搜索接口：',
         source: async (term) => {
@@ -98,7 +105,6 @@ program
       if (urls.length === 1) {
         if (typeof urls[0] === 'string') {
           // 载入文档，查找对应接口
-          const doc = await loadDoc();
           const apis = await searchApi(doc);
           const matched = apis.filter((item) => item.path === urls[0]);
           if (matched.length === 0) {
@@ -107,12 +113,12 @@ program
           }
           urls[0] = matched[0];
         }
-        codeContextResults = await generateSingleApiCode(urls[0] as ApiOperationObject, {
+        codeContextResults = await generateSingleApiCode(doc, urls[0] as ApiOperationObject, {
           funcName: options.func,
           funcTpl: config.funcTpl,
         });
       } else {
-        codeContextResults = await generateCode(urls, { funcTpl: config.funcTpl });
+        codeContextResults = await generateCode(doc, urls, { funcTpl: config.funcTpl });
       }
 
       for (const codeContext of codeContextResults) {

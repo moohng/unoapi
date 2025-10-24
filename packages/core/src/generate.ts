@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject } from 'openapi3-ts/oas30';
+import { OpenAPIObject, ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject } from 'openapi3-ts/oas30';
 import { parseSchemaObject, parseUrl } from './parse.js';
 import { formatObjName, upperFirst } from './tools.js';
 import {
@@ -10,7 +10,7 @@ import {
   ApiCodeContext,
   transformModelCode,
 } from './transform.js';
-import { loadDoc, searchApi } from './doc.js';
+import { searchApi } from './doc.js';
 import { FuncTplCallback } from './config.js';
 
 /**
@@ -37,26 +37,25 @@ export interface GenerateCodeContext {
  * 生成代码
  * @param urls 接口 URL 列表，空表示生成所有
  */
-export async function generateCode(urls: (string | ApiOperationObject)[], options?: GenerateOptions) {
-  const doc = await loadDoc();
+export async function generateCode(doc: OpenAPIObject, urls: (string | ApiOperationObject)[], options?: GenerateOptions) {
   const apis = await searchApi(doc);
 
   const results: Promise<GenerateCodeContext[]>[] = [];
   if (urls.length === 0) {
     // 生成所有
     for (const item of apis) {
-      results.push(generateSingleApiCode(item, options));
+      results.push(generateSingleApiCode(doc, item, options));
     }
   } else {
     for (const url of urls) {
       if ((url as ApiOperationObject).path) {
-        results.push(generateSingleApiCode(url as ApiOperationObject, options));
+        results.push(generateSingleApiCode(doc, url as ApiOperationObject, options));
         continue;
       }
       const matched = apis.filter((item) => item.path === url);
       if (matched.length) {
         for (const item of matched) {
-          results.push(generateSingleApiCode(item, options));
+          results.push(generateSingleApiCode(doc, item, options));
         }
       } else {
         console.warn('未找到匹配的接口：', url);
@@ -81,7 +80,7 @@ interface GenerateSingleOptions extends GenerateOptions {
  * @param parsedApi 解析后的 API 对象
  * @param options 生成选项
  */
-export async function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
+export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
   console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
 
   let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
@@ -121,7 +120,7 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
     } else {
       schema = reqBody as ReferenceObject;
     }
-    const { type, refs } = await parseSchemaObject(schema);
+    const { type, refs } = parseSchemaObject(schema);
     bodyTypeName = type;
     apiRefs.push(...refs);
   }
@@ -173,7 +172,7 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
         const mediaType = Object.keys(resp.content)[0];
         const schema = resp.content[mediaType].schema;
         if (schema) {
-          const { type, refs } = await parseSchemaObject(schema);
+          const { type, refs } = parseSchemaObject(schema);
           responseTypeName = type;
           apiRefs.push(...refs);
         }
@@ -222,16 +221,18 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
   }
 
   console.log('当前 api 引用的模型：', apiRefs);
-  const fileDir = path.join(dirName || '', 'model');
-  const results = await generateModelCode([...apiRefs]);
-  for (const codeContext of results || []) {
-    const filePath = path.join(fileDir, codeContext.fileFullName);
-    generateCodeContextList.push({
-      ...codeContext,
-      sourceType: 'model',
-      fileDir,
-      filePath,
-    });
+  if (doc.components?.schemas) {
+    const fileDir = path.join(dirName || '', 'model');
+    const results = await generateModelCode(doc.components?.schemas, [...apiRefs]);
+    for (const codeContext of results || []) {
+      const filePath = path.join(fileDir, codeContext.fileFullName);
+      generateCodeContextList.push({
+        ...codeContext,
+        sourceType: 'model',
+        fileDir,
+        filePath,
+      });
+    }
   }
 
   return generateCodeContextList;
@@ -242,16 +243,14 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
  * @param refs 模型引用列表
  * @returns
  */
-async function generateModelCode(refs: string[]): Promise<GenerateCodeContext[]> {
-  const doc = await loadDoc();
-
+async function generateModelCode(schemas: Record<string, ReferenceObject | SchemaObject>, refs: string[]): Promise<GenerateCodeContext[]> {
   const allRefsSet = new Set<string>(refs);
   const allContextList: GenerateCodeContext[] = [];
 
   async function generateCode(ref: string) {
     let refKey = ref.replace('#/components/schemas/', '');
     let modelObj: SchemaObject | ReferenceObject | undefined;
-    modelObj = doc.components?.schemas?.[refKey];
+    modelObj = schemas[refKey];
     if (!modelObj) {
       console.error(`${refKey} 不存在！`);
       return;

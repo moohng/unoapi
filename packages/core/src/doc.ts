@@ -1,21 +1,31 @@
 import * as fs from 'fs/promises';
-import { loadConfig } from './config.js';
+import { OpenApiInput } from './config.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
 import { ApiOperationObject } from './transform.js';
 
 /**
  * 更新 OpenAPI 文档
+ * @param input OpenAPI 文档 URL 或获取函数
+ * @param output 缓存文件路径
+ * @returns OpenAPI 文档对象
  */
-export async function updateOpenAPIDoc() {
+export async function updateDoc(input: OpenApiInput, output?: string) {
   console.log('更新 OpenAPI 文档');
 
-  const config = await loadConfig();
-  const jsonDoc = await (typeof config.openapiUrl === 'function' ? config.openapiUrl() : fetchDoc(config.openapiUrl));
+  const jsonDoc = await (typeof input === 'function' ? input() : fetchDoc(input));
   console.log('OpenAPI 文档获取成功');
 
-  const cacheFile = config.cacheFile;
-  await fs.writeFile(cacheFile, JSON.stringify(jsonDoc, null, 2));
-  console.log('文档缓存成功', cacheFile);
+  if (output) {
+    try {
+      await fs.writeFile(output, JSON.stringify(jsonDoc, null, 2));
+      console.log('文档缓存成功', output);
+    } catch (error) {
+      console.error('文档缓存失败：', error);
+      throw error;
+    }
+  }
+
+  return jsonDoc as OpenAPIObject;
 }
 
 async function fetchDoc(url: string) {
@@ -29,12 +39,17 @@ async function fetchDoc(url: string) {
 
 /**
  * 加载 OpenAPI 文档
+ * @param cacheFile 缓存文件路径
  * @returns OpenAPI 文档对象
  */
-export async function loadDoc() {
-  const { cacheFile } = await loadConfig();
-  const doc = require(cacheFile) as OpenAPIObject;
-  return doc;
+export function loadDoc(cacheFile: string) {
+  try {
+    const doc = require(cacheFile) as OpenAPIObject;
+    return doc;
+  } catch (error) {
+    console.error('加载 OpenAPI 文档失败，检查缓存文件是否存在', cacheFile);
+    throw error;
+  }
 }
 
 /**

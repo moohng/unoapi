@@ -38,11 +38,11 @@ export interface ApiOperationObject extends OperationObject {
  * @param obj
  * @returns
  */
-export async function transformTypeFieldCode(obj: TypeFieldOption | string) {
+export function transformTypeFieldCode(obj: TypeFieldOption | string) {
   if (typeof obj === 'string') {
     obj = { name: obj, required: true } as TypeFieldOption;
   }
-  const { type: tsType, refs } = await parseSchemaObject(obj.schema);
+  const { type: tsType, refs } = parseSchemaObject(obj.schema);
   let codeStr = `  ${obj.name.replace(/\W/g, '')}${obj.required ? '' : '?'}: ${tsType};`;
 
   const descriptionComment = obj.description ? ` ${obj.description} ` : '';
@@ -64,11 +64,11 @@ export async function transformTypeFieldCode(obj: TypeFieldOption | string) {
  * @param name
  * @returns
  */
-export async function transformQueryCode(params: TypeFieldOption[], name: string) {
+export function transformQueryCode(params: TypeFieldOption[], name: string) {
   const codes: string[] = [];
   const allRefs: string[] = [];
   for (const param of params) {
-    const { code, refs } = await transformTypeFieldCode(param);
+    const { code, refs } = transformTypeFieldCode(param);
     codes.push(code);
     allRefs.push(...refs);
   }
@@ -83,7 +83,7 @@ export async function transformQueryCode(params: TypeFieldOption[], name: string
  * @param refKey 
  * @returns 
  */
-export async function transformModelCode(modelObj: SchemaObject, refKey: string) {
+export function transformModelCode(modelObj: SchemaObject, refKey: string) {
   const { required, properties, description: objDesc } = modelObj as SchemaObject;
 
   let objName = formatObjName(refKey);
@@ -101,7 +101,7 @@ export async function transformModelCode(modelObj: SchemaObject, refKey: string)
     // 定义属性
     const property = properties[propKey];
 
-    let { type: tsType, refs: subRefs } = await parseSchemaObject(property);
+    let { type: tsType, refs: subRefs } = parseSchemaObject(property);
     for (const subRef of subRefs) {
       refs.push(subRef);
       importRefKeys.add(subRef.replace('#/components/schemas/', ''));
@@ -147,13 +147,13 @@ export async function transformModelCode(modelObj: SchemaObject, refKey: string)
  * @param apiContext
  * @returns
  */
-export async function transformApiCode(apiContext: ApiCodeContext) {
+export function transformApiCode(apiContext: ApiCodeContext) {
   const { queryType, bodyType, responseType, comment, name, url, method, pathParams } = apiContext;
 
   let paramStr = bodyType || queryType ? `data: ${bodyType || queryType}` : '';
   let urlStr = `'${url}'`;
   if (pathParams?.length) {
-    let codeStr = (await Promise.all(pathParams.map((item) => transformTypeFieldCode(item))))
+    let codeStr = pathParams.map((item) => transformTypeFieldCode(item))
       .map((item) => item.code.trim())
       .join(' ');
     paramStr = `params: { ${codeStr} }${paramStr ? ', ' + paramStr : ''}`;

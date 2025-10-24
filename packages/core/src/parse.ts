@@ -1,6 +1,5 @@
 import { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import { formatObjName, isBaseType } from './tools.js';
-import { loadConfig } from './config.js';
 
 /**
  * 解析URL路径
@@ -45,11 +44,11 @@ export function parseUrl(input: string) {
 /**
  * 解析属性类型
  * @param {string | SchemaObject | ReferenceObject} property
+ * @param {Record<string, string>} typeMapping 类型映射
  * @returns
  */
-export async function parseSchemaObject(property?: string | SchemaObject | ReferenceObject) {
-  const config = await loadConfig();
-  const typeMapping = {
+export function parseSchemaObject(property?: string | SchemaObject | ReferenceObject, typeMapping?: Record<string, string>) {
+  const mergedTypeMapping = {
     string: 'string',
     integer: 'number',
     int: 'number',
@@ -59,13 +58,7 @@ export async function parseSchemaObject(property?: string | SchemaObject | Refer
     number: 'number',
     boolean: 'boolean',
     object: 'object',
-    ...config.typeMapping?.reduce(
-      (acc, [key, value]) => {
-        acc[key] = value;
-        return acc;
-      },
-      {} as Record<string, string>
-    ),
+    ...typeMapping,
   };
 
   const refs: string[] = [];
@@ -90,7 +83,7 @@ export async function parseSchemaObject(property?: string | SchemaObject | Refer
       property = (property as SchemaObject)?.type as string;
     }
 
-    return typeMapping[property as keyof typeof typeMapping] || 'any';
+    return mergedTypeMapping[property as keyof typeof typeMapping] || 'any';
   }
 
   return {

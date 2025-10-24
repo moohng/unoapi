@@ -6,6 +6,8 @@ import { existsPath } from './tools.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
 import { ApiCodeContext } from './transform.js';
 
+export type OpenApiInput = string | (() => Promise<OpenAPIObject> | OpenAPIObject);
+
 /**
  * UnoAPI 配置项
  */
@@ -13,7 +15,7 @@ export interface UnoUserConfig {
   /**
    * OpenAPI URL 地址，可以是字符串或返回字符串的函数
    */
-  openapiUrl: string | (() => Promise<OpenAPIObject> | OpenAPIObject);
+  openapiUrl: OpenApiInput;
   /**
    * 输出目录，默认 src/api；数组表示models输出目录
    */
