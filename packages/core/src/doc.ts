@@ -1,6 +1,7 @@
-import { writeFile } from 'fs/promises';
-import { loadConfig } from '../config/index.js';
+import * as fs from 'fs/promises';
+import { loadConfig } from './config.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
+import { ApiOperationObject } from './transform.js';
 
 /**
  * 更新 OpenAPI 文档
@@ -9,11 +10,11 @@ export async function updateOpenAPIDoc() {
   console.log('更新 OpenAPI 文档');
 
   const config = await loadConfig();
-  const jsonDoc = await (typeof config.openapiUrl === 'function' ?  config.openapiUrl() : fetchDoc(config.openapiUrl));
+  const jsonDoc = await (typeof config.openapiUrl === 'function' ? config.openapiUrl() : fetchDoc(config.openapiUrl));
   console.log('OpenAPI 文档获取成功');
 
   const cacheFile = config.cacheFile;
-  await writeFile(cacheFile, JSON.stringify(jsonDoc, null, 2));
+  await fs.writeFile(cacheFile, JSON.stringify(jsonDoc, null, 2));
   console.log('文档缓存成功', cacheFile);
 }
 
@@ -39,18 +40,18 @@ export async function loadDoc() {
 /**
  * 搜索 API 接口
  * @param keywords 关键词
- * @returns 
+ * @returns
  */
-export async function searchApi(keywords?: string) {
-  const doc = await loadDoc();
-
-  const result: string[] = [];
+export async function searchApi(doc: OpenAPIObject, keywords?: string) {
+  const result: ApiOperationObject[] = [];
   for (const path in doc.paths) {
     for (const method in doc.paths[path]) {
       const operation = (doc.paths[path] as any)[method];
-      const summary = operation.summary || '';
-      const description = operation.description || '';
-      result.push(`[${method.toUpperCase()}] ${path} ${summary} ${description}`);
+      result.push({
+        ...operation,
+        path,
+        method,
+      });
     }
   }
 
@@ -58,5 +59,11 @@ export async function searchApi(keywords?: string) {
     return result;
   }
 
-  return result.filter((item) => item.includes(keywords));
+  return result.filter(
+    (item) =>
+      item.path.includes(keywords) ||
+      item.summary?.includes(keywords) ||
+      item.description?.includes(keywords) ||
+      item.tags?.some((tag) => tag.includes(keywords))
+  );
 }

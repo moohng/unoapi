@@ -1,11 +1,11 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { existsPath } from './common.js';
+import { existsPath } from './tools.js';
 
 /**
  * 写入文件
- * @param filePath 
- * @param content 
+ * @param filePath
+ * @param content
  */
 export async function writeToFile(filePath: string, content: string) {
   // 创建输出文件
@@ -20,9 +20,9 @@ export async function writeToFile(filePath: string, content: string) {
 
 /**
  * 追加内容到文件
- * @param filePath 
- * @param content 
- * @returns 
+ * @param filePath
+ * @param content
+ * @returns
  */
 export async function appendToFile(filePath: string, content: string) {
   // 创建输出文件
@@ -37,21 +37,20 @@ export async function appendToFile(filePath: string, content: string) {
 
 /**
  * 写入到index.ts
- * @param typeName 
- * @param outDir 
- * @returns 
+ * @param typeName
+ * @param outDir
+ * @returns
  */
 export async function writeToIndexFile(typeName: string, outDir: string, filePath?: string) {
-
   const modelFilePath = path.join(outDir, 'index.ts');
 
-  let relativePath = filePath? path.relative(outDir, path.dirname(filePath)) : `.`;
+  let relativePath = filePath ? path.relative(outDir, path.dirname(filePath)) : `.`;
   if (!relativePath.startsWith('.')) {
     relativePath = relativePath ? `./${relativePath}` : '.';
   }
 
   // 新建
-  if (!await existsPath(modelFilePath)) {
+  if (!(await existsPath(modelFilePath))) {
     await fs.mkdir(path.dirname(modelFilePath), { recursive: true });
     await fs.writeFile(modelFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
 

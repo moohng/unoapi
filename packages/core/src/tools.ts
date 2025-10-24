@@ -9,7 +9,10 @@ import * as fs from 'fs/promises';
  */
 export function formatObjName(objName: string) {
   // 去掉包名 com.xxx.common.dto2.  、非法字符
-  let name = objName.replace(/[\w-]+(\.|\/)/g, '').replace(/«/g, '<').replace(/»/g, '>')
+  let name = objName
+    .replace(/[\w-]+(\.|\/)/g, '')
+    .replace(/«/g, '<')
+    .replace(/»/g, '>');
   name = name.replace(/[^<>]+/g, (match) => {
     return match.replace(/[^a-zA-Z0-9]/g, '') || match;
   });
@@ -26,8 +29,8 @@ export function isBaseType(type: string) {
 
 /**
  * 首字母大写
- * @param str 
- * @returns 
+ * @param str
+ * @returns
  */
 export function upperFirst(str: string) {
   if (!str) return str;
@@ -36,8 +39,8 @@ export function upperFirst(str: string) {
 
 /**
  * 判断路径是否存在
- * @param filePath 
- * @returns 
+ * @param filePath
+ * @returns
  */
 export async function existsPath(filePath: string): Promise<boolean> {
   try {

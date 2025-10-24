@@ -1,8 +1,8 @@
-export * from './unoapi.js';
-export * from './config/index.js';
-export * from './doc/index.js';
+export * from './generate.js';
+export * from './config.js';
+export * from './doc.js';
 
-export * from './utils/write.js';
-export * from './utils/common.js';
-export * from './utils/parse.js';
-export * from './utils/transform.js';
+export * from './write.js';
+export * from './tools.js';
+export * from './parse.js';
+export * from './transform.js';

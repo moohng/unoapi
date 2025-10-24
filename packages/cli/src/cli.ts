@@ -2,7 +2,7 @@
 import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateOpenAPIDoc, createUnoAPI, loadConfig, appendToFile, writeToFile, writeToIndexFile, searchApi } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateOpenAPIDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateCodeContext } from '@unoapi/core';
 
 const program = new Command();
 
@@ -63,16 +63,28 @@ program
 
     const config = await loadConfig();
     console.log('配置文件', config);
-    const unoapi = await createUnoAPI(config);
 
     if (options.all) {
       // 生成所有接口的代码
       urls = [];
     } else if (urls?.length === 0) {
       // 让用户选择
-      const selectedUrl = await inquirer.search<string>({
+      const doc = await loadDoc();
+      const selectedUrl = await inquirer.search<ApiOperationObject>({
         message: '使用关键字搜索接口：',
-        source: async (term) => searchApi(term || ''),
+        source: async (term) => {
+          const apis = await searchApi(doc, term);
+          return apis.map(api => {
+            // const tag = api.tags?.join(',');
+            // return `[${api.method.toUpperCase()}] ${api.path} ${tag ? (tag + ': ') : ''}${[api.summary, api.description].join('-')}`;
+            const methodStr = `[${api.method.toUpperCase()}]`;
+            return {
+              value: api,
+              name: `${methodStr.padEnd(9)}${api.path}`,
+              description: [api.summary, api.description].filter(Boolean).join(' - ') || api.path,
+            };
+          }); // 显示方法和路径
+        },
         pageSize: 10,
       });
       urls = [selectedUrl];
@@ -85,23 +97,28 @@ program
       }
     }
 
-    console.log('urls：', urls);
-
     try {
-      await unoapi
-        .api(urls)
-        .on(async (codeContext) => {
-          if (codeContext.sourceType === 'api') {
-            const filePath = path.resolve(options.output || config.output, codeContext.filePath!);
-            await appendToFile(filePath, codeContext.sourceCode);
-          } else {
-            const modelDir = path.resolve(options.output || config.modelOutput, codeContext.fileDir);
-            const filePath = path.resolve(modelDir, codeContext.fileName);
-            await writeToFile(filePath, codeContext.sourceCode);
-            await writeToIndexFile(codeContext.typeName!, path.resolve(modelDir), filePath);
-          }
-        })
-        .start({ funcName: options.funcName, output: options.output });
+      let codeContextResults: GenerateCodeContext[] = [];
+      if (urls.length === 1) {
+        codeContextResults = await generateSingleApiCode(urls[0] as ApiOperationObject, {
+          funcName: options.func,
+          funcTpl: config.funcTpl,
+        });
+      } else {
+        codeContextResults = await generateCode(urls, { funcTpl: config.funcTpl });
+      }
+      for (const codeContext of codeContextResults) {
+        console.log('生成代码：', codeContext.filePath);
+        if (codeContext.sourceType === 'api') {
+          const filePath = path.resolve(options.output || config.output, codeContext.filePath!);
+          await appendToFile(filePath, codeContext.sourceCode);
+        } else {
+          const modelDir = path.resolve(options.output || config.modelOutput, codeContext.fileDir);
+          const filePath = path.resolve(modelDir, codeContext.fileName);
+          await writeToFile(filePath, codeContext.sourceCode);
+          await writeToIndexFile(codeContext.typeName!, path.resolve(modelDir), filePath);
+        }
+      }
       process.exit(0);
     } catch (error) {
       console.error('操作失败：', error);

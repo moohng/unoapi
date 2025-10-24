@@ -13,5 +13,4 @@
     "composite": true,
   },
   "include": ["src"],
-  "exclude": ["src/**/tpl.ts"]
 }

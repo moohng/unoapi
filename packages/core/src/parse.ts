@@ -1,6 +1,6 @@
-import { ReferenceObject, SchemaObject } from "openapi3-ts/oas30";
-import { formatObjName, isBaseType } from "./common.js";
-import { loadConfig } from "../config/index.js";
+import { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
+import { formatObjName, isBaseType } from './tools.js';
+import { loadConfig } from './config.js';
 
 /**
  * 解析URL路径
@@ -10,7 +10,10 @@ import { loadConfig } from "../config/index.js";
  */
 export function parseUrl(input: string) {
   // 根据URL路径确定目录结构
-  const urlSplitArr = input.replace(/[-_](\w)/g, (_, p1) => p1.toUpperCase()).replace(/^\//, '').split('/');
+  const urlSplitArr = input
+    .replace(/[-_](\w)/g, (_, p1) => p1.toUpperCase())
+    .replace(/^\//, '')
+    .split('/');
 
   // 路径参数
   const pathStrParams: string[] = [];
@@ -45,10 +48,7 @@ export function parseUrl(input: string) {
  * @param {Record<string, string>} typeMapping 类型映射表 { string: 'string', integer: 'number', ... }
  * @returns
  */
-export async function parseSchemaObject(
-  property?: string | SchemaObject | ReferenceObject,
-  receiveRefHandler?: (ref: string) => void,
-): Promise<string> {
+export async function parseSchemaObject(property?: string | SchemaObject | ReferenceObject) {
   const config = await loadConfig();
   const typeMapping = {
     string: 'string',
@@ -60,18 +60,23 @@ export async function parseSchemaObject(
     number: 'number',
     boolean: 'boolean',
     object: 'object',
-    ...config.typeMapping?.reduce((acc, [key, value]) => {
-      acc[key] = value;
-      return acc;
-    }, {} as Record<string, string>),
+    ...config.typeMapping?.reduce(
+      (acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+      },
+      {} as Record<string, string>
+    ),
   };
+
+  const refs: string[] = [];
 
   function parse(property?: string | SchemaObject | ReferenceObject): string {
     if (typeof property !== 'string') {
       // 引用类型
       const ref = (property as ReferenceObject)?.$ref;
       if (ref) {
-        receiveRefHandler?.(ref);
+        refs.push(ref);
         const name = formatObjName(ref);
         const parseType = parse(name);
         return isBaseType(parseType) && parseType !== 'any' ? parseType : name;
@@ -88,6 +93,9 @@ export async function parseSchemaObject(
 
     return typeMapping[property as keyof typeof typeMapping] || 'any';
   }
-  
-  return parse(property);
+
+  return {
+    type: parse(property),
+    refs: refs,
+  };
 }
