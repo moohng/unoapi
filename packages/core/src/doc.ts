@@ -1,7 +1,7 @@
-import * as fs from 'fs/promises';
 import { OpenApiInput } from './config.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
 import { ApiOperationObject } from './transform.js';
+import { writeToFile } from './write.js';
 
 /**
  * 更新 OpenAPI 文档
@@ -17,7 +17,7 @@ export async function updateDoc(input: OpenApiInput, output?: string) {
 
   if (output) {
     try {
-      await fs.writeFile(output, JSON.stringify(jsonDoc, null, 2));
+      await writeToFile(output, JSON.stringify(jsonDoc, null, 2));
       console.log('文档缓存成功', output);
     } catch (error) {
       console.error('文档缓存失败：', error);

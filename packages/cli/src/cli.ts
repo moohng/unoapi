@@ -61,7 +61,7 @@ program
   .option('-o, --output <output>', '输出目录')
   .option('--func <funcName>', '自定义 API 函数名称')
   .option('--all', '生成所有接口的代码')
-  .action(async (urls, options) => {
+  .action(async (urls: (string | ApiOperationObject)[], options) => {
     console.log('开始生成 API 代码...');
     if (!await existsConfig()) {
       console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
@@ -90,31 +90,23 @@ program
         },
         pageSize: 10,
       });
-      urls = [selectedUrl];
-    }
 
-    if (urls.length === 1 && !options.func) {
-      // 让用户输入一个函数名称
-      const funcName = await inquirer.input({
-        message: '请输入自定义函数名称（可选）：',
-      });
-      options.func = funcName;
+      urls = [selectedUrl];
+
+      if (!options.func) {
+        // 让用户输入一个函数名称
+        const funcName = await inquirer.input({
+          message: '请输入自定义函数名称（可选）：',
+        });
+        options.func = funcName;
+      }
     }
 
     try {
       let genApis: GenerateApi[] = [];
-      if (urls.length === 1) {
-        if (typeof urls[0] === 'string') {
-          // 载入文档，查找对应接口
-          const apis = await searchApi(doc);
-          const matched = apis.filter((item) => item.path === urls[0]);
-          if (matched.length === 0) {
-            console.error(`未找到匹配的接口：${urls[0]}`);
-            process.exit(1);
-          }
-          urls[0] = matched[0];
-        }
-        genApis.push(await generateSingleApiCode(urls[0] as ApiOperationObject, {
+
+      if (urls.length === 1 && typeof urls[0] !== 'string') {
+        genApis.push(await generateSingleApiCode(urls[0], {
           funcName: options.func,
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
