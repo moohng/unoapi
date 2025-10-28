@@ -25,7 +25,9 @@ jobs:
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org/"
-          node-auth-token: ${{ secrets.NPM_TOKEN }}
+          always-auth: true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # 3️⃣ 设置 pnpm
       - name: Setup pnpm
