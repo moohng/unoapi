@@ -10,4 +10,7 @@ export default defineUnoConfig({
   //   // 返回自定义 API 函数的字符串
   //   return `export function...`;
   // },
+
+  // asGlobalModel: false,
+  // imports: ['import request from \'@utils/request\';'],
 });

@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile } from '@unoapi/core';
 
 const program = new Command();
 
@@ -69,7 +68,13 @@ program
     }
 
     const config = await loadConfig();
-    const doc = loadDoc(config.cacheFile);
+    let doc
+    try {
+      doc = loadDoc(config.cacheFile);
+    } catch {
+      console.error('请先运行 uno update 下载文档');
+      process.exit(1);
+    }
 
     if (options.all) {
       // 生成所有接口的代码
@@ -94,49 +99,48 @@ program
       urls = [selectedUrl];
     }
 
+    if (typeof urls[0] === 'string') {
+      urls = filterApi(doc, urls as string[]);
+    }
+    
+    let genApis: GenerateApi[] = [];
+    if (urls.length === 1) {
+      if (!options.func) {
+        // 让用户输入一个函数名称
+        const funcName = await inquirer.input({
+          message: '请输入自定义函数名称（可选）：',
+        });
+        options.func = funcName;
+      }
+      genApis.push(generateSingleApiCode(urls[0] as ApiOperationObject, {
+        funcName: options.func,
+        funcTpl: config.funcTpl,
+        typeMapping: config.typeMapping,
+      }));
+    } else {
+      genApis = generateCode(urls as ApiOperationObject[], {
+        funcTpl: config.funcTpl,
+        typeMapping: config.typeMapping,
+      });
+    }
+
     try {
-      let genApis: GenerateApi[] = [];
-
-      if (typeof urls[0] === 'string') {
-        urls = filterApi(doc, urls as string[]);
-      }
-      
-      if (urls.length === 1) {
-        if (!options.func) {
-          // 让用户输入一个函数名称
-          const funcName = await inquirer.input({
-            message: '请输入自定义函数名称（可选）：',
-          });
-          options.func = funcName;
-        }
-        genApis.push(generateSingleApiCode(urls[0] as ApiOperationObject, {
-          funcName: options.func,
-          funcTpl: config.funcTpl,
-          typeMapping: config.typeMapping,
-        }));
-      } else {
-        genApis = generateCode(urls as ApiOperationObject[], { funcTpl: config.funcTpl, typeMapping: config.typeMapping, });
-      }
-
       for (const genApi of genApis) {
-        console.log('写入 api 代码到：', genApi.filePath);
-        const filePath = path.resolve(options.output || config.output, genApi.filePath);
-        await appendToFile(filePath, genApi.sourceCode);
+        await writeApiFile(genApi, { base: options.output || config.output, imports: config.imports });
 
         if (doc.components?.schemas) {
           const genModels = genApi.getModels(doc.components?.schemas);
-          for (const model of genModels) {
-            const modelDir = path.resolve(options.output || config.modelOutput, model.fileDir);
-            const filePath = path.resolve(modelDir, model.fileFullName);
-            console.log('写入 model 代码到：', filePath);
-            await writeToFile(filePath, model.sourceCode);
-            await writeToIndexFile(model.typeName, path.resolve(modelDir), filePath);
-          }
+          
+          await writeModelFile(genModels, {
+            base: options.output || config.modelOutput,
+            asGlobalModel: config.asGlobalModel,
+          });
         }
       }
+      
       process.exit(0);
     } catch (error) {
-      console.error('操作失败：', error);
+      console.error('写入文件失败：', error);
       process.exit(1);
     }
   });

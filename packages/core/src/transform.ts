@@ -198,12 +198,22 @@ export interface ImportTypeItem {
  * @param imports
  * @returns
  */
-export function transformTypeIndexCode(imports: ImportTypeItem[]) {
+export function transformTypeIndexCode(imports: ImportTypeItem[], asGlobal = false) {
   let importStr = '';
-  let typeStr = 'declare global {\n';
+  let typeStr = asGlobal ? 'declare global {\n' : 'export {\n';
+  const uniqueMap: Record<string, boolean> = {};
   for (const item of imports) {
-    importStr += `import _${item.typeName} from '${item.path}';\n`;
-    typeStr += `  type ${item.typeName} = _${item.typeName};\n`;
+    if (uniqueMap[item.typeName]) {
+      continue;
+    }
+    if (asGlobal) {
+      importStr += `import _${item.typeName} from '${item.path}';\n`;
+      typeStr += `  type ${item.typeName} = _${item.typeName};\n`;
+    } else {
+      importStr += `import ${item.typeName} from '${item.path}';\n`;
+      typeStr += `  ${item.typeName},\n`;
+    }
+    uniqueMap[item.typeName] = true;
   }
   typeStr += '}\n';
 

@@ -24,8 +24,22 @@ export interface UnoUserConfig {
    * 缓存文件，默认 [output]/.openapi-cache.json
    */
   cacheFile?: string;
+  /**
+   * 自定义类型映射
+   */
   typeMapping?: Record<string, string>;
+  /**
+   * 自定义 api 函数
+   */
   funcTpl?: FuncTplCallback;
+  /**
+   * 是否将model类型写入全局
+   */
+  asGlobalModel?: boolean;
+  /**
+   * api 函数的头部导入代码
+   */
+  imports?: string | string[];
 }
 
 export type FuncTplCallback = (context: ApiContext) => string;
@@ -34,6 +48,7 @@ export interface UnoConfig extends UnoUserConfig {
   output: string;
   modelOutput: string;
   cacheFile: string;
+  imports?: string[];
 }
 
 /**
@@ -150,6 +165,10 @@ function checkConfig(config: UnoUserConfig): UnoConfig {
     }
   } else {
     localConfig.cacheFile = getDefaultCacheFile(localConfig.output);
+  }
+
+  if (typeof config.imports === 'string') {
+    localConfig.imports = [config.imports];
   }
 
   return localConfig;
