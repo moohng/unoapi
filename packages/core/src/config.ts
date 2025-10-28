@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 import Module from 'module';
 import { existsPath } from './tools.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
-import { ApiCodeContext } from './transform.js';
+import { ApiContext } from './transform.js';
 
 export type OpenApiInput = string | (() => Promise<OpenAPIObject> | OpenAPIObject);
 
@@ -24,11 +24,11 @@ export interface UnoUserConfig {
    * 缓存文件，默认 [output]/.openapi-cache.json
    */
   cacheFile?: string;
-  typeMapping?: string[][];
+  typeMapping?: Record<string, string>;
   funcTpl?: FuncTplCallback;
 }
 
-export type FuncTplCallback = (context: ApiCodeContext) => string | Promise<string>;
+export type FuncTplCallback = (context: ApiContext) => string | Promise<string>;
 
 export interface UnoConfig extends UnoUserConfig {
   output: string;

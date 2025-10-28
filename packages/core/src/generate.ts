@@ -7,55 +7,79 @@ import {
   transformApiCode,
   ApiOperationObject,
   TypeFieldOption,
-  ApiCodeContext,
+  ApiContext,
   transformModelCode,
 } from './transform.js';
 import { searchApi } from './doc.js';
 import { FuncTplCallback } from './config.js';
 
 /**
- * 生成的代码上下文
+ * 生成的代码
  */
-export interface GenerateCodeContext {
-  sourceType: 'api' | 'model';
+interface GenerateCode {
   sourceCode: string;
-  /** 函数名称 */
-  funcName?: string;
-  /** 类型名称 Abc */
-  typeName?: string;
   /** 文件名称 abc */
   fileName: string;
   /** 文件全名称 abc.ts */
   fileFullName: string;
   /** 文件相对目录 users */
-  fileDir?: string;
+  fileDir: string;
   /** 文件相对路径 users/abc.ts */
   filePath: string;
 }
 
 /**
+ * 生成的模型
+ */
+export interface GenerateModel extends GenerateCode {
+  /** 类型名称 Abc */
+  typeName?: string;
+}
+
+/**
+ * 生成的 API
+ */
+export interface GenerateApi extends GenerateCode {
+  /** 函数名称 */
+  funcName: string;
+  /** api 模型引用 */
+  refs?: string[];
+  /** 生成模型 */
+  generateModels: (schemas: Record<string, ReferenceObject | SchemaObject>) => Promise<GenerateModel[]>;
+}
+
+interface GenerateOptions {
+  /** 自定义类型映射 */
+  typeMapping?: Record<string, string>;
+  /** 自定义函数模板 */
+  funcTpl?: FuncTplCallback;
+}
+
+/**
  * 生成代码
+ * @param doc OpenAPI 文档对象
  * @param urls 接口 URL 列表，空表示生成所有
+ * @param options 生成选项
  */
 export async function generateCode(doc: OpenAPIObject, urls: (string | ApiOperationObject)[], options?: GenerateOptions) {
   const apis = await searchApi(doc);
 
-  const results: Promise<GenerateCodeContext[]>[] = [];
+  const results: GenerateApi[] = [];
   if (urls.length === 0) {
     // 生成所有
     for (const item of apis) {
-      results.push(generateSingleApiCode(doc, item, options));
+      results.push(await generateSingleApiCode(item, options));
     }
   } else {
     for (const url of urls) {
       if ((url as ApiOperationObject).path) {
-        results.push(generateSingleApiCode(doc, url as ApiOperationObject, options));
+        results.push(await generateSingleApiCode(url as ApiOperationObject, options));
         continue;
       }
       const matched = apis.filter((item) => item.path === url);
       if (matched.length) {
         for (const item of matched) {
-          results.push(generateSingleApiCode(doc, item, options));
+          results.push(await generateSingleApiCode(item, options));
         }
       } else {
         console.warn('未找到匹配的接口：', url);
@@ -63,12 +87,7 @@ export async function generateCode(doc: OpenAPIObject, urls: (string | ApiOperat
     }
   }
 
-  return Promise.all(results).then((res) => res.flat());
-}
-
-interface GenerateOptions {
-  onlyModel?: boolean; // 仅生成模型代码
-  funcTpl?: FuncTplCallback; // 自定义函数模板
+  return Promise.all(results);
 }
 
 interface GenerateSingleOptions extends GenerateOptions {
@@ -80,7 +99,7 @@ interface GenerateSingleOptions extends GenerateOptions {
  * @param parsedApi 解析后的 API 对象
  * @param options 生成选项
  */
-export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
+export async function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions): Promise<GenerateApi> {
   console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
 
   let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
@@ -107,8 +126,6 @@ export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOp
 
   const apiRefs: string[] = [];
 
-  const generateCodeContextList: GenerateCodeContext[] = [];
-
   // 入参
   let bodyTypeName: string | undefined;
   if (parsedApi.requestBody) {
@@ -120,10 +137,12 @@ export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOp
     } else {
       schema = reqBody as ReferenceObject;
     }
-    const { type, refs } = parseSchemaObject(schema);
+    const { type, refs } = parseSchemaObject(schema, options?.typeMapping);
     bodyTypeName = type;
     apiRefs.push(...refs);
   }
+
+  const generateModelContextList: GenerateModel[] = [];
 
   let queryTypeName: string | undefined;
   if (parsedApi.parameters?.length) {
@@ -145,14 +164,13 @@ export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOp
     // 生成 query 类型
     if (queryParams.length) {
       queryTypeName = `${upperFirst(fileNameWithoutExt)}${upperFirst(funcName)}Query`;
-      const { code, refs } = await transformQueryCode(queryParams, queryTypeName);
+      const { code, refs } = transformQueryCode(queryParams, queryTypeName, options?.typeMapping);
       apiRefs.push(...refs);
       const fileFullName = `${queryTypeName}.ts`;
       const queryFileDir = path.join(dirName || '', 'query');
       const filePath = path.join(queryFileDir, fileFullName);
 
-      generateCodeContextList.push({
-        sourceType: 'model',
+      generateModelContextList.push({
         sourceCode: code,
         typeName: queryTypeName,
         fileName: queryTypeName,
@@ -172,7 +190,7 @@ export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOp
         const mediaType = Object.keys(resp.content)[0];
         const schema = resp.content[mediaType].schema;
         if (schema) {
-          const { type, refs } = parseSchemaObject(schema);
+          const { type, refs } = parseSchemaObject(schema, options?.typeMapping);
           responseTypeName = type;
           apiRefs.push(...refs);
         }
@@ -181,61 +199,59 @@ export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOp
     }
   }
 
-  if (!options?.onlyModel) {
-    // 构建 API 上下文
-    let apiContext: ApiCodeContext = {
-      api: parsedApi,
-      url: parsedApi.path,
-      method: parsedApi.method,
-      name: funcName,
-      pathParams,
-      queryType: queryTypeName,
-      bodyType: bodyTypeName,
-      responseType: responseTypeName,
-      comment: parsedApi.summary || parsedApi.description || '',
-    };
+  // 构建 API 上下文
+  let apiContext: ApiContext = {
+    api: parsedApi,
+    url: parsedApi.path,
+    method: parsedApi.method,
+    name: funcName,
+    pathParams,
+    queryType: queryTypeName,
+    bodyType: bodyTypeName,
+    responseType: responseTypeName,
+    comment: parsedApi.summary || parsedApi.description || '',
+    refs: apiRefs,
+  };
 
-    let sourceCode = '';
-    if (typeof options?.funcTpl === 'function') {
-      const result = await options?.funcTpl(apiContext);
-      console.log('自定义函数模板输出结果', result);
-      if (typeof result === 'string') {
-        sourceCode = result;
-      }
+  let sourceCode = '';
+  if (typeof options?.funcTpl === 'function') {
+    const result = await options?.funcTpl(apiContext);
+    console.log('自定义函数模板输出结果', result);
+    if (typeof result === 'string') {
+      sourceCode = result;
     }
-    if (!sourceCode) {
-      sourceCode = await transformApiCode(apiContext);
-    }
-
-    const fileFullName = `${fileNameWithoutExt}.ts`;
-    const filePath = path.join(dirName || '', fileFullName);
-    generateCodeContextList.push({
-      sourceType: 'api',
-      sourceCode,
-      fileName: fileNameWithoutExt,
-      fileFullName,
-      fileDir: dirName,
-      filePath,
-      funcName,
-    });
   }
+  if (!sourceCode) {
+    sourceCode = transformApiCode(apiContext, options?.typeMapping);
+  }
+
+  const fileFullName = `${fileNameWithoutExt}.ts`;
+  const filePath = path.join(dirName || '', fileFullName);
 
   console.log('当前 api 引用的模型：', apiRefs);
-  if (doc.components?.schemas) {
-    const fileDir = path.join(dirName || '', 'model');
-    const results = await generateModelCode(doc.components?.schemas, [...apiRefs]);
-    for (const codeContext of results || []) {
-      const filePath = path.join(fileDir, codeContext.fileFullName);
-      generateCodeContextList.push({
-        ...codeContext,
-        sourceType: 'model',
-        fileDir,
-        filePath,
-      });
-    }
-  }
 
-  return generateCodeContextList;
+  return {
+    sourceCode,
+    fileName: fileNameWithoutExt,
+    fileFullName,
+    fileDir: dirName,
+    filePath,
+    funcName,
+    refs: apiRefs,
+    generateModels: async (schemas) => {
+      const fileDir = path.join(dirName || '', 'model');
+      const results = await generateModelCode(schemas, apiRefs, options?.typeMapping);
+      for (const codeContext of results || []) {
+        const filePath = path.join(fileDir, codeContext.fileFullName);
+        generateModelContextList.push({
+          ...codeContext,
+          fileDir,
+          filePath,
+        });
+      }
+      return generateModelContextList;
+    },
+  };
 }
 
 /**
@@ -243,9 +259,9 @@ export async function generateSingleApiCode(doc: OpenAPIObject, parsedApi: ApiOp
  * @param refs 模型引用列表
  * @returns
  */
-async function generateModelCode(schemas: Record<string, ReferenceObject | SchemaObject>, refs: string[]): Promise<GenerateCodeContext[]> {
+export async function generateModelCode(schemas: Record<string, ReferenceObject | SchemaObject>, refs: string[], typeMapping?: Record<string, string>) {
   const allRefsSet = new Set<string>(refs);
-  const allContextList: GenerateCodeContext[] = [];
+  const allContextList: GenerateModel[] = [];
 
   async function generateCode(ref: string) {
     let refKey = ref.replace('#/components/schemas/', '');
@@ -269,18 +285,18 @@ async function generateModelCode(schemas: Record<string, ReferenceObject | Schem
     }
 
     // 拼接代码
-    const { code, refs } = await transformModelCode(modelObj as SchemaObject, refKey);
+    const { code, refs } = transformModelCode(modelObj as SchemaObject, refKey, typeMapping);
     for (const subRef of refs) {
       allRefsSet.add(subRef);
     }
     
     const fileFullName = `${objName}.ts`;
     allContextList.push({
-      sourceType: 'model',
       sourceCode: code,
       typeName: objName,
       fileName: objName,
       fileFullName,
+      fileDir: '',
       filePath: '',
     });
   }

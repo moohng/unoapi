@@ -2,7 +2,7 @@
 import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateCodeContext } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateApi } from '@unoapi/core';
 
 const program = new Command();
 
@@ -101,7 +101,7 @@ program
     }
 
     try {
-      let codeContextResults: GenerateCodeContext[] = [];
+      let genApis: GenerateApi[] = [];
       if (urls.length === 1) {
         if (typeof urls[0] === 'string') {
           // 载入文档，查找对应接口
@@ -113,24 +113,29 @@ program
           }
           urls[0] = matched[0];
         }
-        codeContextResults = await generateSingleApiCode(doc, urls[0] as ApiOperationObject, {
+        genApis.push(await generateSingleApiCode(urls[0] as ApiOperationObject, {
           funcName: options.func,
           funcTpl: config.funcTpl,
-        });
+          typeMapping: config.typeMapping,
+        }));
       } else {
-        codeContextResults = await generateCode(doc, urls, { funcTpl: config.funcTpl });
+        genApis = await generateCode(doc, urls, { funcTpl: config.funcTpl, typeMapping: config.typeMapping, });
       }
 
-      for (const codeContext of codeContextResults) {
-        console.log('写入代码到：', codeContext.filePath);
-        if (codeContext.sourceType === 'api') {
-          const filePath = path.resolve(options.output || config.output, codeContext.filePath!);
-          await appendToFile(filePath, codeContext.sourceCode);
-        } else {
-          const modelDir = path.resolve(options.output || config.modelOutput, codeContext.fileDir);
-          const filePath = path.resolve(modelDir, codeContext.fileFullName);
-          writeToFile(filePath, codeContext.sourceCode);
-          await writeToIndexFile(codeContext.typeName!, path.resolve(modelDir), filePath);
+      for (const genApi of genApis) {
+        console.log('写入 api 代码到：', genApi.filePath);
+        const filePath = path.resolve(options.output || config.output, genApi.filePath!);
+        await appendToFile(filePath, genApi.sourceCode);
+
+        if (doc.components?.schemas) {
+          const genModels = await genApi.generateModels(doc.components?.schemas);
+          for (const model of genModels) {
+            const modelDir = path.resolve(options.output || config.modelOutput, model.fileDir);
+            const filePath = path.resolve(modelDir, model.fileFullName);
+            console.log('写入 model 代码到：', filePath);
+            await writeToFile(filePath, model.sourceCode);
+            await writeToIndexFile(model.typeName, path.resolve(modelDir), filePath);
+          }
         }
       }
       process.exit(0);
