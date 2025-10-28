@@ -35,7 +35,7 @@ jobs:
 
       # 4️⃣ 构建所有子包
       - name: Build packages
-        run: pnpm build -r
+        run: pnpm build
 
       # 5️⃣ 检查并创建新版本（Changesets 自动识别改动）
       - name: Create and publish new versions
