@@ -57,7 +57,7 @@ export function loadDoc(cacheFile: string) {
  * @param keywords 关键词
  * @returns
  */
-export async function searchApi(doc: OpenAPIObject, keywords?: string) {
+export function searchApi(doc: OpenAPIObject, keywords?: string) {
   const result: ApiOperationObject[] = [];
   for (const path in doc.paths) {
     for (const method in doc.paths[path]) {
@@ -81,4 +81,14 @@ export async function searchApi(doc: OpenAPIObject, keywords?: string) {
       item.description?.includes(keywords) ||
       item.tags?.some((tag) => tag.includes(keywords))
   );
+}
+
+/**
+ * 过滤 API 接口
+ * @param urls URL 列表
+ * @returns
+ */
+export function filterApi(doc: OpenAPIObject, urls: string[]) {
+  const apis = searchApi(doc);
+  return apis.filter((item) => urls.includes(item.path));
 }

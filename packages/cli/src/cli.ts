@@ -2,7 +2,7 @@
 import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateApi } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, appendToFile, writeToFile, writeToIndexFile, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi } from '@unoapi/core';
 
 const program = new Command();
 
@@ -79,7 +79,7 @@ program
       const selectedUrl = await inquirer.search<ApiOperationObject>({
         message: '使用关键字搜索接口：',
         source: async (term) => {
-          const apis = await searchApi(doc, term);
+          const apis = searchApi(doc, term);
           return apis.map(api => {
             const methodStr = `[${api.method.toUpperCase()}]`;
             return {
@@ -92,27 +92,30 @@ program
       });
 
       urls = [selectedUrl];
-
-      if (!options.func) {
-        // 让用户输入一个函数名称
-        const funcName = await inquirer.input({
-          message: '请输入自定义函数名称（可选）：',
-        });
-        options.func = funcName;
-      }
     }
 
     try {
       let genApis: GenerateApi[] = [];
 
-      if (urls.length === 1 && typeof urls[0] !== 'string') {
-        genApis.push(await generateSingleApiCode(urls[0], {
+      if (typeof urls[0] === 'string') {
+        urls = filterApi(doc, urls as string[]);
+      }
+      
+      if (urls.length === 1) {
+        if (!options.func) {
+          // 让用户输入一个函数名称
+          const funcName = await inquirer.input({
+            message: '请输入自定义函数名称（可选）：',
+          });
+          options.func = funcName;
+        }
+        genApis.push(generateSingleApiCode(urls[0] as ApiOperationObject, {
           funcName: options.func,
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
         }));
       } else {
-        genApis = await generateCode(doc, urls, { funcTpl: config.funcTpl, typeMapping: config.typeMapping, });
+        genApis = generateCode(urls as ApiOperationObject[], { funcTpl: config.funcTpl, typeMapping: config.typeMapping, });
       }
 
       for (const genApi of genApis) {
@@ -121,7 +124,7 @@ program
         await appendToFile(filePath, genApi.sourceCode);
 
         if (doc.components?.schemas) {
-          const genModels = await genApi.getModels(doc.components?.schemas);
+          const genModels = genApi.getModels(doc.components?.schemas);
           for (const model of genModels) {
             const modelDir = path.resolve(options.output || config.modelOutput, model.fileDir);
             const filePath = path.resolve(modelDir, model.fileFullName);

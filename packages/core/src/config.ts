@@ -28,7 +28,7 @@ export interface UnoUserConfig {
   funcTpl?: FuncTplCallback;
 }
 
-export type FuncTplCallback = (context: ApiContext) => string | Promise<string>;
+export type FuncTplCallback = (context: ApiContext) => string;
 
 export interface UnoConfig extends UnoUserConfig {
   output: string;

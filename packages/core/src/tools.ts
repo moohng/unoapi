@@ -42,7 +42,7 @@ export function upperFirst(str: string) {
  * @param filePath
  * @returns
  */
-export async function existsPath(filePath: string): Promise<boolean> {
+export async function existsPath(filePath: string) {
   try {
     await fs.access(filePath);
     return true;

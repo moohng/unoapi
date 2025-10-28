@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { OpenAPIObject, ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject } from 'openapi3-ts/oas30';
+import { ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject } from 'openapi3-ts/oas30';
 import { parseSchemaObject, parseUrl } from './parse.js';
 import { formatObjName, upperFirst } from './tools.js';
 import {
@@ -10,7 +10,6 @@ import {
   ApiContext,
   transformModelCode,
 } from './transform.js';
-import { searchApi } from './doc.js';
 import { FuncTplCallback } from './config.js';
 
 /**
@@ -43,7 +42,7 @@ export interface GenerateApi extends GenerateCode {
   /** api 模型引用 */
   refs?: string[];
   /** 生成模型 */
-  getModels: (schemas: Record<string, ReferenceObject | SchemaObject>) => Promise<GenerateModel[]>;
+  getModels: (schemas: Record<string, ReferenceObject | SchemaObject>) => GenerateModel[];
 }
 
 interface GenerateOptions {
@@ -55,37 +54,11 @@ interface GenerateOptions {
 
 /**
  * 生成代码
- * @param doc OpenAPI 文档对象
- * @param urls 接口 URL 列表，空表示生成所有
+ * @param apis api 列表
  * @param options 生成选项
  */
-export async function generateCode(doc: OpenAPIObject, urls: (string | ApiOperationObject)[], options?: GenerateOptions) {
-  const apis = await searchApi(doc);
-
-  const results: GenerateApi[] = [];
-  if (urls.length === 0) {
-    // 生成所有
-    for (const item of apis) {
-      results.push(await generateSingleApiCode(item, options));
-    }
-  } else {
-    for (const url of urls) {
-      if ((url as ApiOperationObject).path) {
-        results.push(await generateSingleApiCode(url as ApiOperationObject, options));
-        continue;
-      }
-      const matched = apis.filter((item) => item.path === url);
-      if (matched.length) {
-        for (const item of matched) {
-          results.push(await generateSingleApiCode(item, options));
-        }
-      } else {
-        console.warn('未找到匹配的接口：', url);
-      }
-    }
-  }
-
-  return Promise.all(results);
+export function generateCode(apis: ApiOperationObject[], options?: GenerateOptions) {
+  return apis.map((api) => generateSingleApiCode(api, options));
 }
 
 interface GenerateSingleOptions extends GenerateOptions {
@@ -97,7 +70,7 @@ interface GenerateSingleOptions extends GenerateOptions {
  * @param parsedApi 解析后的 API 对象
  * @param options 生成选项
  */
-export async function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions): Promise<GenerateApi> {
+export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions): GenerateApi {
   console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
 
   let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
@@ -213,7 +186,7 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
 
   let sourceCode = '';
   if (typeof options?.funcTpl === 'function') {
-    const result = await options?.funcTpl(apiContext);
+    const result = options?.funcTpl(apiContext);
     console.log('自定义函数模板输出结果', result);
     if (typeof result === 'string') {
       sourceCode = result;
@@ -235,9 +208,9 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
     fileDir: dirName,
     filePath,
     refs: apiRefs,
-    getModels: async (schemas) => {
+    getModels: (schemas) => {
       const fileDir = path.join(dirName || '', 'model');
-      const results = await generateModelCode(schemas, apiRefs, options?.typeMapping);
+      const results = generateModelCode(schemas, apiRefs, options?.typeMapping);
       for (const codeContext of results || []) {
         const filePath = path.join(fileDir, codeContext.fileFullName);
         generateModelContextList.push({
@@ -256,11 +229,11 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
  * @param refs 模型引用列表
  * @returns
  */
-export async function generateModelCode(schemas: Record<string, ReferenceObject | SchemaObject>, refs: string[], typeMapping?: Record<string, string>) {
+export function generateModelCode(schemas: Record<string, ReferenceObject | SchemaObject>, refs: string[], typeMapping?: Record<string, string>) {
   const allRefsSet = new Set<string>(refs);
   const allContextList: GenerateModel[] = [];
 
-  async function generateCode(ref: string) {
+  function generateCode(ref: string) {
     let refKey = ref.replace('#/components/schemas/', '');
     let modelObj: SchemaObject | ReferenceObject | undefined;
     modelObj = schemas[refKey];
@@ -270,7 +243,7 @@ export async function generateModelCode(schemas: Record<string, ReferenceObject 
     }
 
     if ((modelObj as ReferenceObject).$ref) {
-      await generateCode((modelObj as ReferenceObject).$ref);
+      generateCode((modelObj as ReferenceObject).$ref);
       return;
     }
 
@@ -299,7 +272,7 @@ export async function generateModelCode(schemas: Record<string, ReferenceObject 
   }
 
   for (const ref of allRefsSet) {
-    await generateCode(ref);
+    generateCode(ref);
   }
 
   return allContextList;
