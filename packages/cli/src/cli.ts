@@ -91,13 +91,14 @@ program
         pageSize: 10,
       });
       urls = [selectedUrl];
-      // 函数名称
-      if (!options.func) {
-        const funcName = await inquirer.input({
-          message: '请输入自定义函数名称（可选）：',
-        });
-        options.func = funcName;
-      }
+    }
+
+    if (urls.length === 1 && !options.func) {
+      // 让用户输入一个函数名称
+      const funcName = await inquirer.input({
+        message: '请输入自定义函数名称（可选）：',
+      });
+      options.func = funcName;
     }
 
     try {
@@ -124,11 +125,11 @@ program
 
       for (const genApi of genApis) {
         console.log('写入 api 代码到：', genApi.filePath);
-        const filePath = path.resolve(options.output || config.output, genApi.filePath!);
+        const filePath = path.resolve(options.output || config.output, genApi.filePath);
         await appendToFile(filePath, genApi.sourceCode);
 
         if (doc.components?.schemas) {
-          const genModels = await genApi.generateModels(doc.components?.schemas);
+          const genModels = await genApi.getModels(doc.components?.schemas);
           for (const model of genModels) {
             const modelDir = path.resolve(options.output || config.modelOutput, model.fileDir);
             const filePath = path.resolve(modelDir, model.fileFullName);

@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { LoginRequest } from './dto/login-request.dto';
 
 @Controller('auth')
-@ApiTags('认证')
+@ApiTags('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

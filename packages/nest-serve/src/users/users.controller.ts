@@ -20,7 +20,7 @@ import { User } from './entities/user.entity';
 import { ApiOkResponse, ApiOperation, ApiTags, ApiConsumes, ApiQuery, ApiParam } from '@nestjs/swagger';
 
 @Controller('users')
-@ApiTags('用户')
+@ApiTags('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

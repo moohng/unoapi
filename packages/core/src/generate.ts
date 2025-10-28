@@ -32,20 +32,18 @@ interface GenerateCode {
  * 生成的模型
  */
 export interface GenerateModel extends GenerateCode {
-  /** 类型名称 Abc */
-  typeName?: string;
+  /** 类型名称 */
+  typeName: string;
 }
 
 /**
  * 生成的 API
  */
 export interface GenerateApi extends GenerateCode {
-  /** 函数名称 */
-  funcName: string;
   /** api 模型引用 */
   refs?: string[];
   /** 生成模型 */
-  generateModels: (schemas: Record<string, ReferenceObject | SchemaObject>) => Promise<GenerateModel[]>;
+  getModels: (schemas: Record<string, ReferenceObject | SchemaObject>) => Promise<GenerateModel[]>;
 }
 
 interface GenerateOptions {
@@ -236,9 +234,8 @@ export async function generateSingleApiCode(parsedApi: ApiOperationObject, optio
     fileFullName,
     fileDir: dirName,
     filePath,
-    funcName,
     refs: apiRefs,
-    generateModels: async (schemas) => {
+    getModels: async (schemas) => {
       const fileDir = path.join(dirName || '', 'model');
       const results = await generateModelCode(schemas, apiRefs, options?.typeMapping);
       for (const codeContext of results || []) {
