@@ -5,7 +5,7 @@
     "moduleResolution": "bundler",
     "strict": true,
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
   },
-  "include": ["src", "packages/**/src", "packages/core/build/tpl.ts"]
+  "include": ["src", "packages/**/src"]
 }

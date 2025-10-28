@@ -7,14 +7,13 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@unoapi/core':
-        specifier: workspace:*
-        version: link:packages/core
     devDependencies:
       '@types/node':
         specifier: 24.3.1
         version: 24.3.1
+      '@unoapi/core':
+        specifier: workspace:*
+        version: link:packages/core
       rimraf:
         specifier: 6.0.1
         version: 6.0.1

@@ -11,10 +11,8 @@
   "keywords": [],
   "author": "moohng@前端星河",
   "license": "ISC",
-  "dependencies": {
-    "@unoapi/core": "workspace:*"
-  },
   "devDependencies": {
+    "@unoapi/core": "workspace:*",
     "@types/node": "24.3.1",
     "rimraf": "6.0.1",
     "typescript": "5.9.2"
