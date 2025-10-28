@@ -1,0 +1,46 @@
+name: Release to npm
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # 手动触发也可以
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ 拉取代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ 设置 Node 环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org/"
+
+      # 3️⃣ 设置 pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: true
+
+      # 4️⃣ 构建所有子包
+      - name: Build packages
+        run: pnpm build -r
+
+      # 5️⃣ 检查并创建新版本（Changesets 自动识别改动）
+      - name: Create and publish new versions
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          pnpm changeset version
+          pnpm changeset publish

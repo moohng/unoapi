@@ -19,6 +19,9 @@
   ],
   "author": "moohng@前端星河",
   "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@unoapi/core": "workspace:*",
     "commander": "^14.0.0",
