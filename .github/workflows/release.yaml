@@ -37,12 +37,12 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10
-          run_install:
-            args: [--frozen-lockfile]
 
-      # 4️⃣ 构建所有子包
+      # 4️⃣ 安装 & 构建
       - name: Build packages
-        run: pnpm build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
 
       # 5️⃣ 创建新版本 & 发布 & 生成 release
       - name: Create and publish new versions
