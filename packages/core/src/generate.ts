@@ -35,6 +35,10 @@ export interface GenerateModel extends GenerateCode {
   typeName: string;
 }
 
+interface ModelSchemaCollection {
+  [schema: string]: SchemaObject | ReferenceObject;
+}
+
 /**
  * 生成的 API
  */
@@ -42,7 +46,7 @@ export interface GenerateApi extends GenerateCode {
   /** api 模型引用 */
   refs?: string[];
   /** 生成模型 */
-  getModels: (schemas: Record<string, ReferenceObject | SchemaObject>) => GenerateModel[];
+  getModels: (schemas: ModelSchemaCollection) => GenerateModel[];
 }
 
 interface GenerateOptions {
@@ -70,7 +74,7 @@ interface GenerateSingleOptions extends GenerateOptions {
  * @param parsedApi 解析后的 API 对象
  * @param options 生成选项
  */
-export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions): GenerateApi {
+export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
   console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
 
   let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
@@ -210,7 +214,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     refs: apiRefs,
     getModels: (schemas) => {
       const fileDir = path.join(dirName || '', 'model');
-      const results = generateModelCode(schemas, apiRefs, options?.typeMapping);
+      const results = generateModelCode(schemas, apiRefs, { typeMapping: options?.typeMapping });
       for (const codeContext of results || []) {
         const filePath = path.join(fileDir, codeContext.fileFullName);
         generateModelContextList.push({
@@ -221,15 +225,21 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
       }
       return generateModelContextList;
     },
-  };
+  } as GenerateApi;
+}
+
+interface GenerateModelOptions {
+  typeMapping?: Record<string, string>
 }
 
 /**
  * 生成模型代码
+ * @param schemas schema 模型集合
  * @param refs 模型引用列表
+ * @param options 选项
  * @returns
  */
-export function generateModelCode(schemas: Record<string, ReferenceObject | SchemaObject>, refs: string[], typeMapping?: Record<string, string>) {
+export function generateModelCode(schemas: ModelSchemaCollection, refs: string[], options?: GenerateModelOptions) {
   const allRefsSet = new Set<string>(refs);
   const allContextList: GenerateModel[] = [];
 
@@ -255,7 +265,7 @@ export function generateModelCode(schemas: Record<string, ReferenceObject | Sche
     }
 
     // 拼接代码
-    const { code, refs } = transformModelCode(modelObj as SchemaObject, refKey, typeMapping);
+    const { code, refs } = transformModelCode(modelObj as SchemaObject, refKey, options?.typeMapping);
     for (const subRef of refs) {
       allRefsSet.add(subRef);
     }

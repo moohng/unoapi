@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile } from '@unoapi/core';
+import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile, OpenAPIObject } from '@unoapi/core';
 
 const program = new Command();
 
@@ -68,7 +68,7 @@ program
     }
 
     const config = await loadConfig();
-    let doc
+    let doc: OpenAPIObject
     try {
       doc = loadDoc(config.cacheFile);
     } catch {
@@ -129,7 +129,7 @@ program
         await writeApiFile(genApi, { base: options.output || config.output, imports: config.imports });
 
         if (doc.components?.schemas) {
-          const genModels = genApi.getModels(doc.components?.schemas);
+          const genModels = genApi.getModels(doc.components.schemas);
           
           await writeModelFile(genModels, {
             base: options.output || config.modelOutput,
