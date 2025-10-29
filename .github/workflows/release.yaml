@@ -18,27 +18,28 @@ jobs:
     steps:
       # 1️⃣ 拉取代码
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      # 2️⃣ 设置 Node 环境
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
       
       # 3️⃣ 设置 pnpm & 安装依赖
       - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
-          pnpm install --frozen-lockfile
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-      # 4️⃣ 构建
+      # 2️⃣ 设置 Node 环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # 4️⃣ 安装 & 构建
       - name: Build packages
-        run: pnpm build
+        run:
+          pnpm install
+          pnpm build
 
       # 5️⃣ 创建新版本 & 发布 & 生成 release
       - name: Create and publish new versions
