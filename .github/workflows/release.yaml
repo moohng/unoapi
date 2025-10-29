@@ -35,18 +35,19 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      # 4️⃣ 安装 & 构建
+      # 4️⃣ 安装
       - name: Build packages
         run:
           pnpm install
-          pnpm build
 
       # 5️⃣ 创建新版本 & 发布 & 生成 release
       - name: Create and publish new versions
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
-          publish: pnpm changeset publish
+          publish: |
+            pnpm build
+            pnpm changeset publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
