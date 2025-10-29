@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "moohng/unoapi" }],
+  "changelog": ["@changesets/cli/changelog", { "repo": "moohng/unoapi" }],
   "commit": true,
   "fixed": [],
   "linked": [["@unoapi/cli", "@unoapi/core"]],
