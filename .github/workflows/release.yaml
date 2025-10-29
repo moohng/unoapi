@@ -21,6 +21,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 3️⃣ 设置 pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       # 2️⃣ 设置 Node 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,12 +37,6 @@ jobs:
           # always-auth: true
         # env:
         #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # 3️⃣ 设置 pnpm
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       # 4️⃣ 安装 & 构建
       - name: Build packages
