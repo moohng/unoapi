@@ -1,4 +1,4 @@
-name: Release to npm
+name: 发布包 & 创建版本
 
 on:
   push:
@@ -18,32 +18,37 @@ jobs:
       # 1️⃣ 拉取代码
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2️⃣ 设置 Node 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: "https://registry.npmjs.org/"
-          always-auth: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          cache: "pnpm"
+          # registry-url: "https://registry.npmjs.org/"
+          # always-auth: true
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # 3️⃣ 设置 pnpm
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
-          run_install: true
+          version: 10
+          run_install: |
+            args: [--frozen-lockfile]
 
       # 4️⃣ 构建所有子包
       - name: Build packages
         run: pnpm build
 
-      # 5️⃣ 检查并创建新版本（Changesets 自动识别改动）
+      # 5️⃣ 创建新版本 & 发布 & 生成 release
       - name: Create and publish new versions
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm -r publish --no-git-checks
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          pnpm changeset version
-          pnpm changeset publish
