@@ -1,5 +1,13 @@
 # @unoapi/core
 
+## 2.0.0
+
+### Major Changes
+
+- 35d21bf: - 不依赖配置文件
+  - uno update 改成 uno download
+  - 支持在线和离线使用
+
 ## 1.0.2
 
 ### Patch Changes
