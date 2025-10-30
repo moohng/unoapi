@@ -11,6 +11,7 @@ export default defineUnoConfig({
   //   return `export function...`;
   // },
 
+  // onlyModel: false,
   // asGlobalModel: false,
   // imports: ['import request from \'@utils/request\';'],
 });

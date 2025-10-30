@@ -15,7 +15,7 @@ export interface UnoUserConfig {
   /**
    * OpenAPI URL 地址，可以是字符串或返回字符串的函数
    */
-  openapiUrl: OpenApiInput;
+  openapiUrl?: OpenApiInput;
   /**
    * 输出目录，默认 src/api；数组表示models输出目录
    */
@@ -33,7 +33,11 @@ export interface UnoUserConfig {
    */
   funcTpl?: FuncTplCallback;
   /**
-   * 是否将model类型写入全局
+   * 只生成 model 代码
+   */
+  onlyModel?: boolean;
+  /**
+   * 是否将 model 类型写入全局
    */
   asGlobalModel?: boolean;
   /**
@@ -90,6 +94,7 @@ export async function generateConfigFile(url?: string) {
   const configContent = tpl.replace('${openapiUrl}', url || 'https://api.example.com/openapi.json');
   // 在项目根目录生成 unoapi.config.ts
   await fs.writeFile(CONFIG_PATH, configContent, 'utf-8');
+  return CONFIG_PATH;
 }
 
 interface NodeModuleWithCompile extends NodeModule {
@@ -105,12 +110,16 @@ let cachedConfig: UnoConfig;
  */
 export async function loadConfig(): Promise<UnoConfig> {
   // 判断文件内容是否更改
-  const stat = await fs.stat(CONFIG_PATH);
-  if (prevMtime === stat.mtimeMs && cachedConfig) {
-    return cachedConfig;
-  }
+  try {
+    const stat = await fs.stat(CONFIG_PATH);
+    if (prevMtime === stat.mtimeMs && cachedConfig) {
+      return cachedConfig;
+    }
 
-  prevMtime = stat.mtimeMs;
+    prevMtime = stat.mtimeMs;
+  } catch {
+    return checkConfig();
+  }
 
   const result = await build({
     entryPoints: [CONFIG_PATH],
@@ -124,7 +133,7 @@ export async function loadConfig(): Promise<UnoConfig> {
   module.paths = Module._nodeModulePaths(process.cwd());
   module._compile(result.outputFiles[0].text, 'unoapi.config.ts');
 
-  cachedConfig = checkConfig(await module.exports.default);
+  cachedConfig = checkConfig(await module.exports.default || module.exports);
   return cachedConfig;
 }
 
@@ -133,9 +142,14 @@ export async function loadConfig(): Promise<UnoConfig> {
  * @param config 配置项
  * @returns
  */
-function checkConfig(config: UnoUserConfig): UnoConfig {
-  if (!config.openapiUrl) {
-    throw new Error('openapiUrl is required');
+function checkConfig(config?: UnoUserConfig): UnoConfig {
+  if (!config) {
+    const output = path.join(process.cwd(), DEFAULT_OUTPUT);
+    return {
+      output,
+      modelOutput: output,
+      cacheFile: getDefaultCacheFile(output),
+    };
   }
 
   const localConfig: UnoConfig = { ...config } as UnoConfig;

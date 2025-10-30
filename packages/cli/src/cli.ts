@@ -1,16 +1,24 @@
 #!/usr/bin/env node
+import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
-import { generateConfigFile, existsConfig, updateDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile, OpenAPIObject } from '@unoapi/core';
+import * as con from 'consola';
+import { generateConfigFile, existsConfig, downloadDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile, OpenAPIObject } from '@unoapi/core';
 
 const program = new Command();
+
+const consola = con.create({
+  defaults: {
+    message: '[UNOAPI]',
+  },
+});
 
 // init 初始化配置文件
 program
   .command('init')
-  .option('-u, --openapi-url [openapiUrl]', 'OpenAPI URL 地址')
+  .argument('[openapiUrl]', 'OpenAPI JSON 文档地址')
   .description('初始化 UnoAPI 配置文件')
-  .action(async (options) => {
+  .action(async (openapiUrl: string) => {
     if (await existsConfig()) {
       // 让用户确认
       const isOverwrite = await inquirer.confirm({
@@ -18,67 +26,100 @@ program
         default: false,
       });
       if (!isOverwrite) {
-        console.error('已取消');
-        process.exit(1);
+        consola.fail('操作取消');
+        process.exit(0);
       }
     }
-    const { openapiUrl } = options;
+
     try {
-      await generateConfigFile(openapiUrl);
-      console.log('配置文件创建成功：unoapi.config.ts');
-    } catch (error) {
-      console.error('配置文件创建失败：', error);
+      const configFile = await generateConfigFile(openapiUrl);
+      consola.success('配置文件创建成功：', configFile);
+    } catch {
+      consola.error(new Error('配置文件创建失败'));
       process.exit(1);
     }
   });
 
-// update 更新 OpenAPI 文档
+// download
 program
-  .command('update')
-  .description('更新 OpenAPI 文档')
-  .action(async () => {
-    if (!await existsConfig()) {
-      console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
-      process.exit(1);
-    }
-
+  .command('download')
+  .argument('[openapiUrl]', 'OpenAPI JSON 文档地址')
+  .description('下载 OpenAPI 文档')
+  .action(async (openapiUrl: string) => {
     const config = await loadConfig();
 
+    if (!openapiUrl && !config.openapiUrl) {
+      consola.fail('请提供一个 openapiUrl 地址，或先运行 uno init 生成配置文件');
+      process.exit(1);
+    }
+
+    const url = openapiUrl || config.openapiUrl;
     try {
-      await updateDoc(config.openapiUrl, config.cacheFile);
-    } catch (error) {
-      console.error('操作失败：', error);
+      consola.start('正在下载 OpenAPI 文档...');
+      await downloadDoc(url, config.cacheFile);
+      consola.success('下载成功！');
+    } catch {
+      consola.error(new Error(`下载失败，请检查 ${url} 是否正确！`));
       process.exit(1);
     }
   });
+
+interface CliApiOptions {
+  openapiUrl?: string;
+  output?: string;
+  func?: string;
+  onlyModel?: boolean;
+  globalModel?: boolean;
+  all?: boolean;
+}
 
 // api 生成API代码
 program
   .command('api', { isDefault: true })
   .argument('[urls...]', '接口 URL，可以是多个，用空格分隔')
   .description('生成 API 代码')
-  .option('-o, --output <output>', '输出目录')
+  .option('-u, --openapi-url <openapiUrl>', 'OpenAPI JSON 文档地址')
+  .option('-o, --output <output>', '输出目录，默认 src/api')
   .option('--func <funcName>', '自定义 API 函数名称')
+  .option('--only-model', '只生成 model 代码')
+  .option('--global-model', '生成 model 类型在全局声明')
   .option('--all', '生成所有接口的代码')
-  .action(async (urls: (string | ApiOperationObject)[], options) => {
-    console.log('开始生成 API 代码...');
-    if (!await existsConfig()) {
-      console.error('配置文件不存在，请先运行 unoapi init 命令生成配置文件');
-      process.exit(1);
-    }
-
+  .action(async (urls: (string | ApiOperationObject)[], options: CliApiOptions) => {
     const config = await loadConfig();
+
     let doc: OpenAPIObject
-    try {
-      doc = loadDoc(config.cacheFile);
-    } catch {
-      console.error('请先运行 uno update 下载文档');
-      process.exit(1);
+
+    if (options.openapiUrl) {
+      try {
+        consola.start('下载远程文档...', options.openapiUrl);
+        doc = await downloadDoc(options.openapiUrl);
+        consola.success('下载成功！');
+      } catch {
+        consola.error(new Error(`下载 OpenAPI JSON 文档失败，请检查 ${options.openapiUrl} 是否正确！`));
+        process.exit(1);
+      }
+    } else {
+      try {
+        doc = loadDoc(config.cacheFile);
+        consola.success('已从本地缓存加载文档', config.cacheFile);
+      } catch {
+        if (config.openapiUrl) {
+          try {
+            consola.start('下载远程文档...', config.openapiUrl);
+            doc = await downloadDoc(config.openapiUrl);
+            consola.success('下载成功！');
+          } catch {
+            consola.error(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 ${config.openapiUrl} 是否正确！`));
+            process.exit(1);
+          }
+        }
+      }
     }
 
     if (options.all) {
       // 生成所有接口的代码
-      urls = [];
+      urls = searchApi(doc);
+      consola.info('生成所有接口');
     } else if (urls?.length === 0) {
       // 让用户选择
       const selectedUrl = await inquirer.search<ApiOperationObject>({
@@ -103,12 +144,14 @@ program
       urls = filterApi(doc, urls as string[]);
     }
     
+    consola.start('生成接口代码...');
+    
     let genApis: GenerateApi[] = [];
     if (urls.length === 1) {
-      if (!options.func) {
+      if (!options.func && !options.onlyModel) {
         // 让用户输入一个函数名称
         const funcName = await inquirer.input({
-          message: '请输入自定义函数名称（可选）：',
+          message: '请输入函数名称（可选）：',
         });
         options.func = funcName;
       }
@@ -125,22 +168,38 @@ program
     }
 
     try {
+      let modelCount = 0;
       for (const genApi of genApis) {
-        await writeApiFile(genApi, { base: options.output || config.output, imports: config.imports });
+        const baseApiOutput = options.output || config.output;
+        if (!options.onlyModel) {
+          await writeApiFile(genApi, { base: baseApiOutput, imports: config.imports });
+        }
+
+        consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
 
         if (doc.components?.schemas) {
           const genModels = genApi.getModels(doc.components.schemas);
           
+          let baseModelOutput = options.output || config.modelOutput;
+          if (!options.onlyModel && baseApiOutput === baseModelOutput) {
+            baseModelOutput = path.join(baseModelOutput, 'model');
+          }
           await writeModelFile(genModels, {
-            base: options.output || config.modelOutput,
-            asGlobalModel: config.asGlobalModel,
+            base: baseModelOutput,
+            asGlobalModel: options.globalModel ?? config.asGlobalModel,
+          });
+
+          modelCount += genModels.length;
+
+          genModels.forEach(m => {
+            consola.success('生成 model：', path.join(baseModelOutput, m.filePath));
           });
         }
       }
       
-      process.exit(0);
-    } catch (error) {
-      console.error('写入文件失败：', error);
+      consola.success(`本次生成 api: ${genApis.length} 个， model: ${modelCount} 个`);
+    } catch {
+      consola.error(new Error('代码生成失败！'));
       process.exit(1);
     }
   });

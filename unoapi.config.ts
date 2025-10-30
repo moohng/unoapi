@@ -1,8 +1,8 @@
 import { defineUnoConfig } from '@unoapi/core';
 
 export default defineUnoConfig({
-  openapiUrl: 'https://unoapi.codingmo.com/api-json', // 支持返回 Promise 的回调函数
-  output: ['examples/api', 'examples/model'], // 如需单独指定模型输出目录：['src/api', 'src/models'],
+  openapiUrl: 'https://api.example.com/openapi.json', // 支持返回 Promise 的回调函数
+  // output: 'src/api', // 如需单独指定模型输出目录：['src/api', 'src/models'],
   // cacheFile: 'src/api/.openapi-cache.json', // 缓存目录
   // typeMapping: { float: number }, // 自定义类型映射优先
 
@@ -11,6 +11,7 @@ export default defineUnoConfig({
   //   return `export function...`;
   // },
 
+  // onlyModel: false,
   // asGlobalModel: false,
-  imports: ['import request from \'@utils/request\';'],
+  // imports: ['import request from \'@utils/request\';'],
 });

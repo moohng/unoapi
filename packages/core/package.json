@@ -8,15 +8,15 @@
   "types": "dist/types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts",
       "require": "./dist/cjs/index.cjs",
-      "types": "./dist/types/index.d.ts"
+      "import": "./dist/esm/index.js"
     }
   },
   "scripts": {
     "build:types": "tsc --emitDeclarationOnly -p tsconfig.json",
     "build:esm": "tsc -p tsconfig.json",
-    "build:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --sourcemap --minify --outfile=dist/cjs/index.cjs --external:esbuild",
+    "build:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --minify --outfile=dist/cjs/index.cjs --external:esbuild",
     "build": "rimraf dist && npm run build:esm && npm run build:cjs && node build/copyTpl.js"
   },
   "files": [

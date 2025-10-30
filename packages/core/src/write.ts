@@ -17,7 +17,7 @@ interface WriteApiOptions {
  * @param options 
  */
 export async function writeApiFile(api: GenerateApi, options: WriteApiOptions) {
-  console.log('写入 api 代码到：', api.filePath);
+  // console.log('写入 api 代码到：', api.filePath);
   const filePath = path.resolve(options.base, api.filePath);
   await appendToFile(filePath, api.sourceCode, options.imports);
 }
@@ -37,7 +37,7 @@ export async function writeModelFile(models: GenerateModel[], options: WriteMode
   for (const model of models) {
     const modelDir = path.resolve(options.base, model.fileDir);
     const filePath = path.resolve(modelDir, model.fileFullName);
-    console.log('写入 model 代码到：', filePath);
+    // console.log('写入 model 代码到：', filePath);
     await writeToFile(filePath, model.sourceCode);
     await writeToIndexFile({
       typeName: model.typeName,

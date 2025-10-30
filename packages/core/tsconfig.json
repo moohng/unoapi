@@ -8,9 +8,7 @@
     "declaration": true,
     "declarationDir": "dist/types",
     "esModuleInterop": true,
-    "strict": true,
-    "sourceMap": true,
-    "composite": true,
+    "strict": true
   },
   "include": ["src"],
 }

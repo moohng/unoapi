@@ -7,7 +7,8 @@
     "uno": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build:esm": "tsc -p tsconfig.json",
+    "build": "esbuild src/cli.ts --platform=node --format=cjs --minify --outfile=dist/cli.js"
   },
   "files": [
     "dist"
@@ -23,8 +24,9 @@
     "access": "public"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.9.0",
     "@unoapi/core": "workspace:*",
     "commander": "^14.0.0",
-    "@inquirer/prompts": "^7.9.0"
+    "consola": "^3.4.2"
   }
 }

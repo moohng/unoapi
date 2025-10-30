@@ -9,19 +9,13 @@ import { writeToFile } from './write.js';
  * @param output 缓存文件路径
  * @returns OpenAPI 文档对象
  */
-export async function updateDoc(input: OpenApiInput, output?: string) {
-  console.log('更新 OpenAPI 文档');
-
+export async function downloadDoc(input: OpenApiInput, output?: string) {
   const jsonDoc = await (typeof input === 'function' ? input() : fetchDoc(input));
-  console.log('OpenAPI 文档获取成功');
-
   if (output) {
     try {
       await writeToFile(output, JSON.stringify(jsonDoc, null, 2));
-      console.log('文档缓存成功', output);
-    } catch (error) {
-      console.error('文档缓存失败：', error);
-      throw error;
+    } catch {
+      throw new Error('文档缓存失败！');
     }
   }
 
@@ -40,15 +34,14 @@ async function fetchDoc(url: string) {
 /**
  * 加载 OpenAPI 文档
  * @param cacheFile 缓存文件路径
- * @returns OpenAPI 文档对象
+ * @returns 文档对象
  */
 export function loadDoc(cacheFile: string) {
   try {
     const doc = require(cacheFile) as OpenAPIObject;
     return doc;
-  } catch (error) {
-    console.error('加载 OpenAPI 文档失败，检查缓存文件是否存在', cacheFile);
-    throw error;
+  } catch {
+    throw new Error(`加载 OpenAPI 文档失败，检查缓存文件 ${cacheFile} 是否存在`);
   }
 }
 
@@ -59,28 +52,28 @@ export function loadDoc(cacheFile: string) {
  */
 export function searchApi(doc: OpenAPIObject, keywords?: string) {
   const result: ApiOperationObject[] = [];
+
+  const isMatched = (item: ApiOperationObject, term: string) => {
+    return item.path.includes(term) ||
+      item.summary?.includes(term) ||
+      item.description?.includes(term) ||
+      item.tags?.some((tag) => tag.includes(term));
+  }
+
   for (const path in doc.paths) {
     for (const method in doc.paths[path]) {
-      const operation = (doc.paths[path] as any)[method];
-      result.push({
-        ...operation,
+      const itemObj: ApiOperationObject = {
+        ...(doc.paths[path] as any)[method],
         path,
         method,
-      });
+      };
+      if (!keywords || isMatched(itemObj, keywords)) {
+        result.push(itemObj);
+      }
     }
   }
 
-  if (!keywords) {
-    return result;
-  }
-
-  return result.filter(
-    (item) =>
-      item.path.includes(keywords) ||
-      item.summary?.includes(keywords) ||
-      item.description?.includes(keywords) ||
-      item.tags?.some((tag) => tag.includes(keywords))
-  );
+  return result;
 }
 
 /**

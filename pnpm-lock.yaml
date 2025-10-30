@@ -17,6 +17,9 @@ importers:
       '@unoapi/core':
         specifier: workspace:*
         version: link:packages/core
+      esbuild:
+        specifier: ^0.25.11
+        version: 0.25.11
       rimraf:
         specifier: 6.0.1
         version: 6.0.1
@@ -35,6 +38,9 @@ importers:
       commander:
         specifier: ^14.0.0
         version: 14.0.1
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
 
   packages/core:
     dependencies:
@@ -489,6 +495,10 @@ packages:
   commander@14.0.1:
     resolution: {integrity: sha512-2JkV3gUZUVrbNA+1sjBOYLsMZ5cEEl8GTFP2a4AVz5hvasAMCQ1D2l2le/cX+pV4N6ZU17zjUahLpIXRrnWL8A==}
     engines: {node: '>=20'}
+
+  consola@3.4.2:
+    resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
+    engines: {node: ^14.18.0 || >=16.10.0}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -1281,6 +1291,8 @@ snapshots:
   color-name@1.1.4: {}
 
   commander@14.0.1: {}
+
+  consola@3.4.2: {}
 
   cross-spawn@7.0.6:
     dependencies:

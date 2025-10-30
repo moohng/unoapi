@@ -75,7 +75,7 @@ interface GenerateSingleOptions extends GenerateOptions {
  * @param options 生成选项
  */
 export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: GenerateSingleOptions) {
-  console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
+  // console.log(`生成单个 api 代码：[${parsedApi.method}] ${parsedApi.path}`);
 
   let { funcName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(parsedApi.path);
 
@@ -142,15 +142,14 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
       const { code, refs } = transformQueryCode(queryParams, queryTypeName, options?.typeMapping);
       apiRefs.push(...refs);
       const fileFullName = `${queryTypeName}.ts`;
-      const queryFileDir = path.join(dirName || '', 'query');
-      const filePath = path.join(queryFileDir, fileFullName);
+      const filePath = path.join(dirName, fileFullName);
 
       generateModelContextList.push({
         sourceCode: code,
         typeName: queryTypeName,
         fileName: queryTypeName,
         fileFullName,
-        fileDir: queryFileDir,
+        fileDir: dirName,
         filePath,
       });
     }
@@ -191,7 +190,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
   let sourceCode = '';
   if (typeof options?.funcTpl === 'function') {
     const result = options?.funcTpl(apiContext);
-    console.log('自定义函数模板输出结果', result);
+    // console.log('自定义函数模板输出结果', result);
     if (typeof result === 'string') {
       sourceCode = result;
     }
@@ -203,7 +202,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
   const fileFullName = `${fileNameWithoutExt}.ts`;
   const filePath = path.join(dirName || '', fileFullName);
 
-  console.log('当前 api 引用的模型：', apiRefs);
+  // console.log('当前 api 引用的模型：', apiRefs);
 
   return {
     sourceCode,
@@ -213,13 +212,12 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     filePath,
     refs: apiRefs,
     getModels: (schemas) => {
-      const fileDir = path.join(dirName || '', 'model');
       const results = generateModelCode(schemas, apiRefs, { typeMapping: options?.typeMapping });
       for (const codeContext of results || []) {
-        const filePath = path.join(fileDir, codeContext.fileFullName);
+        const filePath = path.join(dirName, codeContext.fileFullName);
         generateModelContextList.push({
           ...codeContext,
-          fileDir,
+          fileDir: dirName,
           filePath,
         });
       }
