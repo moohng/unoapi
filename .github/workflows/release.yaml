@@ -25,8 +25,6 @@ jobs:
       # 3️⃣ 设置 pnpm & 安装依赖
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       # 2️⃣ 设置 Node 环境
       - name: Setup Node.js
