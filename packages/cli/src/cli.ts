@@ -87,7 +87,7 @@ program
   .action(async (urls: (string | ApiOperationObject)[], options: CliApiOptions) => {
     const config = await loadConfig();
 
-    let doc: OpenAPIObject
+    let doc: OpenAPIObject;
 
     if (options.openapiUrl) {
       try {

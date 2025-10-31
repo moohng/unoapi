@@ -1,5 +1,13 @@
 # @unoapi/cli
 
+## 2.0.1
+
+### Patch Changes
+
+- 介绍文档
+- Updated dependencies
+  - @unoapi/core@2.0.1
+
 ## 2.0.0
 
 ### Major Changes

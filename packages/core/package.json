@@ -1,6 +1,6 @@
 {
   "name": "@unoapi/core",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "前端API自动化编码工具 UnoAPI",
   "type": "module",
   "main": "dist/cjs/index.js",

@@ -1,5 +1,11 @@
 # @unoapi/core
 
+## 2.0.1
+
+### Patch Changes
+
+- 介绍文档
+
 ## 2.0.0
 
 ### Major Changes

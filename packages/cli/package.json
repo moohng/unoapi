@@ -1,10 +1,11 @@
 {
   "name": "@unoapi/cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "UnoAPI 的命令行工具",
   "main": "dist/index.js",
   "bin": {
-    "uno": "dist/cli.js"
+    "uno": "dist/cli.js",
+    "unoapi": "dist/cli.js"
   },
   "scripts": {
     "build:esm": "tsc -p tsconfig.json",
