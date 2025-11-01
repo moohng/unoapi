@@ -3,7 +3,7 @@ import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
 import * as con from 'consola';
-import { generateConfigFile, existsConfig, downloadDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile, OpenAPIObject } from '@unoapi/core';
+import { generateConfigFile, existsConfig, downloadDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile, OpenAPIObject, UnoConfigType } from '@unoapi/core';
 
 const program = new Command();
 
@@ -19,7 +19,26 @@ program
   .argument('[openapiUrl]', 'OpenAPI JSON 文档地址')
   .description('初始化 UnoAPI 配置文件')
   .action(async (openapiUrl: string) => {
-    if (await existsConfig()) {
+    // 输入地址
+    if (!openapiUrl) {
+      openapiUrl = await inquirer.input({
+        message: 'OpenAPI JSON 文档地址：',
+        required: true,
+      });
+    }
+
+    // 选择配置风格
+    const configType = await inquirer.select<UnoConfigType>({
+      message: '选择一种配置风格：',
+      choices: [
+        { name: 'package.json 中', value: UnoConfigType.PACKAGE },
+        { name: 'JavaScript 风格', value: UnoConfigType.JS },
+        { name: 'TypeScript 风格', value: UnoConfigType.TS },
+      ],
+      default: UnoConfigType.PACKAGE,
+    });
+
+    if (await existsConfig(configType)) {
       // 让用户确认
       const isOverwrite = await inquirer.confirm({
         message: '配置文件已存在，是否覆盖？',
@@ -32,10 +51,10 @@ program
     }
 
     try {
-      const configFile = await generateConfigFile(openapiUrl);
+      const configFile = await generateConfigFile(openapiUrl, configType);
       consola.success('配置文件创建成功：', configFile);
     } catch {
-      consola.error(new Error('配置文件创建失败'));
+      consola.error(new Error('配置文件创建失败！'));
       process.exit(1);
     }
   });
@@ -59,7 +78,7 @@ program
       await downloadDoc(url, config.cacheFile);
       consola.success('下载成功！');
     } catch {
-      consola.error(new Error(`下载失败，请检查 ${url} 是否正确！`));
+      consola.fail(new Error(`下载失败，请检查 ${url} 是否正确！`));
       process.exit(1);
     }
   });
@@ -95,7 +114,7 @@ program
         doc = await downloadDoc(options.openapiUrl);
         consola.success('下载成功！');
       } catch {
-        consola.error(new Error(`下载 OpenAPI JSON 文档失败，请检查 ${options.openapiUrl} 是否正确！`));
+        consola.fail(new Error(`下载 OpenAPI JSON 文档失败，请检查 ${options.openapiUrl} 是否正确！`));
         process.exit(1);
       }
     } else {
@@ -109,9 +128,12 @@ program
             doc = await downloadDoc(config.openapiUrl);
             consola.success('下载成功！');
           } catch {
-            consola.error(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 ${config.openapiUrl} 是否正确！`));
+            consola.fail(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 ${config.openapiUrl} 是否正确！`));
             process.exit(1);
           }
+        } else {
+          consola.fail('请使用 -u 参数提供一个 openapiUrl 地址，或先运行 uno init 生成配置文件！');
+          process.exit(1);
         }
       }
     }

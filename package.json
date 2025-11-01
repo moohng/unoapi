@@ -5,6 +5,7 @@
   "description": "前端API自动化编码工具",
   "scripts": {
     "preinstall": "node ./scripts/check.js",
+    "postinstall": "node ./scripts/check.js",
     "build": "rimraf packages/*/dist -g && pnpm -r build",
     "local:changeset": "pnpm changeset",
     "local:version": "pnpm changeset version",

@@ -46,6 +46,15 @@ export interface UnoUserConfig {
   imports?: string | string[];
 }
 
+/**
+ * 配置类型
+ */
+export enum UnoConfigType {
+  PACKAGE = 1,
+  JS,
+  TS,
+}
+
 export type FuncTplCallback = (context: ApiContext) => string;
 
 export interface UnoConfig extends UnoUserConfig {
@@ -67,8 +76,18 @@ export async function defineUnoConfig(config: UnoUserConfig | (() => UnoUserConf
   return config;
 }
 
-/** 配置路径 */
-const CONFIG_PATH = path.join(process.cwd(), 'unoapi.config.ts');
+/**
+ * 获取配置路径
+ */
+export function getConfigFile(type = UnoConfigType.PACKAGE) {
+  let configFileName = 'package.json';
+  if (type === UnoConfigType.JS) {
+    configFileName = 'unoapi.config.js';
+  } else if (type === UnoConfigType.TS) {
+    configFileName = 'unoapi.config.ts';
+  }
+  return path.join(process.cwd(), configFileName);
+}
 
 /** 默认输出目录 */
 const DEFAULT_OUTPUT = 'src/api';
@@ -89,52 +108,70 @@ function getDefaultCacheFile(output = DEFAULT_OUTPUT) {
  * 生成配置文件
  * @param url OpenAPI URL 地址
  */
-export async function generateConfigFile(url?: string) {
-  const tpl = await fs.readFile(path.join(__dirname, '/tpl.txt'), 'utf-8');
-  const configContent = tpl.replace('${openapiUrl}', url || 'https://api.example.com/openapi.json');
-  // 在项目根目录生成 unoapi.config.ts
-  await fs.writeFile(CONFIG_PATH, configContent, 'utf-8');
-  return CONFIG_PATH;
+export async function generateConfigFile(url = 'https://api.example.com/openapi.json', type = UnoConfigType.PACKAGE) {
+  const configPath = getConfigFile(type);
+  if (type === UnoConfigType.PACKAGE) {
+    const packageJson = require(configPath);
+    packageJson.unoapi = {
+      openapiUrl: url,
+    };
+    await fs.writeFile(configPath, JSON.stringify(packageJson, null, 2));
+  } else {
+    const tpl = await fs.readFile(path.join(__dirname, '/tpl.txt'), 'utf-8');
+    let configContent = tpl.replace('${openapiUrl}', url);
+    if (type === UnoConfigType.JS) {
+      configContent = configContent.split(/\r?\n/).slice(2).join('\n');
+      configContent = configContent.replace('defineUnoConfig(', '').replace(/\}\);/, '};');
+    }
+    await fs.writeFile(configPath, configContent, 'utf-8');
+  }
+  return configPath;
 }
 
 interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any;
 }
 
-let prevMtime: number = 0;
-let cachedConfig: UnoConfig;
-
 /**
  * 加载配置文件（支持 ts-node）
  * @returns
  */
 export async function loadConfig(): Promise<UnoConfig> {
-  // 判断文件内容是否更改
+  // 从 package.json 中加载配置
   try {
-    const stat = await fs.stat(CONFIG_PATH);
-    if (prevMtime === stat.mtimeMs && cachedConfig) {
-      return cachedConfig;
+    const packageJson = require(path.join(process.cwd(), 'package.json'));
+    if (packageJson.unoapi && Object.keys(packageJson.unoapi).length > 0) {
+      return packageJson.unoapi;
     }
+  } catch {}
 
-    prevMtime = stat.mtimeMs;
-  } catch {
+  // 从配置文件中加载配置
+  let filePath = getConfigFile(UnoConfigType.JS);
+  if (!await existsPath(filePath)) {
+    filePath = getConfigFile(UnoConfigType.TS);
+  }
+
+  if (!await existsPath(filePath)) {
     return checkConfig();
   }
 
-  const result = await build({
-    entryPoints: [CONFIG_PATH],
-    platform: 'node',
-    format: 'cjs',
-    write: false,
-  });
+  try {
+    const result = await build({
+      entryPoints: [filePath],
+      platform: 'node',
+      format: 'cjs',
+      write: false,
+    });
 
-  const module = new Module('unoapi.config.ts') as NodeModuleWithCompile;
-  // @ts-ignore
-  module.paths = Module._nodeModulePaths(process.cwd());
-  module._compile(result.outputFiles[0].text, 'unoapi.config.ts');
+    const module = new Module('unoapi.config.ts') as NodeModuleWithCompile;
+    // @ts-ignore
+    module.paths = Module._nodeModulePaths(process.cwd());
+    module._compile(result.outputFiles[0].text, 'unoapi.config.ts');
 
-  cachedConfig = checkConfig(await module.exports.default || module.exports);
-  return cachedConfig;
+    return checkConfig(await module.exports.default || module.exports);
+  } catch {
+    return checkConfig();
+  }
 }
 
 /**
@@ -192,6 +229,15 @@ function checkConfig(config?: UnoUserConfig): UnoConfig {
  * 检查配置文件是否存在
  * @returns
  */
-export async function existsConfig() {
-  return await existsPath(CONFIG_PATH);
+export async function existsConfig(type: UnoConfigType) {
+  const configPath = getConfigFile(type);
+  if (type === UnoConfigType.PACKAGE) {
+    try {
+      const packageJson = require(configPath);
+      return !!packageJson.openapi;
+    } catch {
+      return false;
+    }
+  }
+  return await existsPath(configPath);
 }
