@@ -1,5 +1,13 @@
 # @unoapi/cli
 
+## 2.0.2
+
+### Patch Changes
+
+- 支持多种风格配置文件
+- Updated dependencies
+  - @unoapi/core@2.0.2
+
 ## 2.0.1
 
 ### Patch Changes
