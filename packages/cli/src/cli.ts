@@ -3,9 +3,15 @@ import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
 import * as con from 'consola';
+import { version } from '../package.json'
 import { generateConfigFile, existsConfig, downloadDoc, loadConfig, generateCode, generateSingleApiCode, searchApi, loadDoc, ApiOperationObject, GenerateApi, filterApi, writeApiFile, writeModelFile, OpenAPIObject, UnoConfigType } from '@unoapi/core';
 
 const program = new Command();
+program
+  .name('uno')
+  .description('前端「接口层」代码生成工具')
+  .helpOption('-h, --help', '帮助')
+  .version(version, '-v, --version', '版本号');
 
 const consola = con.create({
   defaults: {
