@@ -1,5 +1,10 @@
 # @unoapi/core
 
+[![build](https://github.com/moohng/unoapi/actions/workflows/release.yaml/badge.svg)](https://github.com/moohng/unoapi/actions/workflows/release.yaml)
+[![NPM Version](https://img.shields.io/npm/v/@unoapi/core.svg?style=flat)](https://www.npmjs.org/package/@unoapi/core)
+[![NPM Downloads](https://img.shields.io/npm/dm/@unoapi/core.svg?style=flat)](https://npmcharts.com/compare/@unoapi/core?minimal=true)
+[![install size](https://packagephobia.com/badge?p=@unoapi/core)](https://packagephobia.com/result?p=@unoapi/core)
+
 @unoapi/core 是 UnoAPI 体系的核心库，专为现代前后端分离项目提供高效、类型安全的 API 自动化编码能力。它聚焦于 OpenAPI 规范解析、类型推导、代码生成、接口文档处理等底层能力，为 CLI、VSCode 插件、脚手架等上层工具提供统一的 API 生成与管理基础。
 
 ## 核心特性

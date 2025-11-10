@@ -1,5 +1,10 @@
 # UnoAPI CLI
 
+[![build](https://github.com/moohng/unoapi/actions/workflows/release.yaml/badge.svg)](https://github.com/moohng/unoapi/actions/workflows/release.yaml)
+[![NPM Version](https://img.shields.io/npm/v/@unoapi/cli.svg?style=flat)](https://www.npmjs.org/package/@unoapi/cli)
+[![NPM Downloads](https://img.shields.io/npm/dm/@unoapi/cli.svg?style=flat)](https://npmcharts.com/compare/@unoapi/cli?minimal=true)
+[![install size](https://packagephobia.com/badge?p=@unoapi/cli)](https://packagephobia.com/result?p=@unoapi/cli)
+
 UnoAPI CLI 是一个为现代前后端分离项目设计的 API 工具链命令行工具，旨在提升 API 开发、维护与协作效率。它支持基于 OpenAPI 规范的接口文档解析、代码生成等功能，助力团队实现高效、规范、自动化的 API 管理流程。
 
 ## 功能特性
