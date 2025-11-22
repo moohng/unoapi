@@ -111,14 +111,34 @@ function getDefaultCacheFile(output = DEFAULT_OUTPUT) {
 export async function generateConfigFile(url = 'https://api.example.com/openapi.json', type = UnoConfigType.PACKAGE) {
   const configPath = getConfigFile(type);
   if (type === UnoConfigType.PACKAGE) {
-    const packageJson = require(configPath);
+    let packageJson: any = {};
+    try {
+      const packageContent = await fs.readFile(configPath, 'utf-8');
+      packageJson = JSON.parse(packageContent);
+    } catch {}
     packageJson.unoapi = {
       openapiUrl: url,
     };
     await fs.writeFile(configPath, JSON.stringify(packageJson, null, 2));
   } else {
-    const tpl = await fs.readFile(path.join(__dirname, '/tpl.txt'), 'utf-8');
-    let configContent = tpl.replace('${openapiUrl}', url);
+    let configContent = `import { defineUnoConfig } from '@unoapi/core';
+
+export default defineUnoConfig({
+  openapiUrl: '${url}', // 支持返回 Promise 的回调函数
+  // output: 'src/api', // 如需单独指定模型输出目录：['src/api', 'src/models'],
+  // cacheFile: 'src/api/.openapi-cache.json', // 缓存目录
+  // typeMapping: { float: number }, // 自定义类型映射优先
+
+  // funcTpl: (context) => { // 自定义 API 函数
+  //   // 返回自定义 API 函数的字符串
+  //   return 'export function...';
+  // },
+
+  // onlyModel: false,
+  // asGlobalModel: false,
+  // imports: ['import request from \'@utils/request\';'],
+});
+`;
     if (type === UnoConfigType.JS) {
       configContent = configContent.split(/\r?\n/).slice(2).join('\n');
       configContent = configContent.replace('defineUnoConfig(', '').replace(/\}\);/, '};');
@@ -139,9 +159,10 @@ interface NodeModuleWithCompile extends NodeModule {
 export async function loadConfig(): Promise<UnoConfig> {
   // 从 package.json 中加载配置
   try {
-    const packageJson = require(path.join(process.cwd(), 'package.json'));
+    const packageContent = await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf-8');
+    const packageJson = JSON.parse(packageContent);
     if (packageJson.unoapi && Object.keys(packageJson.unoapi).length > 0) {
-      return packageJson.unoapi;
+      return checkConfig(packageJson.unoapi);
     }
   } catch {}
 
@@ -156,6 +177,8 @@ export async function loadConfig(): Promise<UnoConfig> {
   }
 
   try {
+    // 删除缓存
+    delete require.cache[require.resolve(filePath)];
     const result = await build({
       entryPoints: [filePath],
       platform: 'node',
@@ -234,7 +257,7 @@ export async function existsConfig(type: UnoConfigType) {
   if (type === UnoConfigType.PACKAGE) {
     try {
       const packageJson = require(configPath);
-      return !!packageJson.openapi;
+      return !!packageJson.unoapi;
     } catch {
       return false;
     }

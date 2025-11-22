@@ -1,0 +1,44 @@
+{
+  "name": "@unoapi/vscode",
+  "displayName": "UnoAPI VSCode",
+  "publisher": "unoapi",
+  "version": "0.0.1",
+  "private": true,
+  "description": "在 VSCode 中生成前端 API 代码",
+  "main": "./dist/extension.js",
+  "type": "commonjs",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "unoapi.generateApi",
+        "title": "[code] 生成代码",
+        "category": "UnoAPI"
+      },
+      {
+        "command": "unoapi.initConfig",
+        "title": "[init] 生成配置文件",
+        "category": "UnoAPI"
+      },
+      {
+        "command": "unoapi.downloadDocument",
+        "title": "[download] 下载 OpenAPI 文档",
+        "category": "UnoAPI"
+      }
+    ]
+  },
+  "scripts": {
+    "dev": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --sourcemap --watch",
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external=vscode --external:esbuild"
+  },
+  "dependencies": {
+    "@unoapi/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.3.1",
+    "@types/vscode": "1.106.1"
+  }
+}

@@ -82,9 +82,9 @@ program
     try {
       consola.start('正在下载 OpenAPI 文档...');
       await downloadDoc(url, config.cacheFile);
-      consola.success('下载成功！');
+      consola.success('下载成功！已保存到：', config.cacheFile);
     } catch {
-      consola.fail(new Error(`下载失败，请检查 ${url} 是否正确！`));
+      consola.fail(new Error(`下载失败，请检查 openapiUrl：${url} 是否正确！`));
       process.exit(1);
     }
   });
@@ -120,7 +120,7 @@ program
         doc = await downloadDoc(options.openapiUrl);
         consola.success('下载成功！');
       } catch {
-        consola.fail(new Error(`下载 OpenAPI JSON 文档失败，请检查 ${options.openapiUrl} 是否正确！`));
+        consola.fail(new Error(`下载 OpenAPI JSON 文档失败，请检查 openapiUrl：${options.openapiUrl} 是否正确！`));
         process.exit(1);
       }
     } else {
@@ -134,7 +134,7 @@ program
             doc = await downloadDoc(config.openapiUrl);
             consola.success('下载成功！');
           } catch {
-            consola.fail(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 ${config.openapiUrl} 是否正确！`));
+            consola.fail(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 openapiUrl：${config.openapiUrl} 是否正确！`));
             process.exit(1);
           }
         } else {

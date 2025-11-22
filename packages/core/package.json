@@ -17,7 +17,7 @@
     "build:types": "tsc --emitDeclarationOnly -p tsconfig.json",
     "build:esm": "tsc -p tsconfig.json",
     "build:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --minify --outfile=dist/cjs/index.cjs --external:esbuild",
-    "build": "rimraf dist && npm run build:esm && npm run build:cjs && node build/copyTpl.js"
+    "build": "rimraf dist && npm run build:esm && npm run build:cjs"
   },
   "files": [
     "dist"
