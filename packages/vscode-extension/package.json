@@ -1,11 +1,18 @@
 {
-  "name": "@unoapi/vscode",
-  "displayName": "UnoAPI VSCode",
-  "publisher": "unoapi",
+  "name": "unoapi-vscode-extension",
+  "displayName": "UnoAPI 自动化编码助手",
+  "publisher": "qianduanxh",
   "version": "0.0.2",
   "description": "自动生成前端 API 代码",
   "main": "./dist/extension.js",
+  "icon": "icon.png",
   "type": "commonjs",
+  "scripts": {
+    "dev": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --sourcemap --watch",
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --external:esbuild",
+    "package": "vsce package --no-dependencies",
+    "publish:marketplace": "vsce publish --no-dependencies -p $VSCE_PAT"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -23,6 +30,15 @@
     "url": "https://github.com/moohng/unoapi.git",
     "directory": "packages/vscode-extension"
   },
+  "files": [
+    "dist/",
+    "icon.png",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "author": "moohng@前端星河",
+  "license": "MIT",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -81,18 +97,12 @@
       ]
     }
   },
-  "scripts": {
-    "dev": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --sourcemap --watch",
-    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --external:esbuild",
-    "package": "vsce package --no-dependencies",
-    "publish:marketplace": "vsce publish --no-dependencies -p $VSCE_PAT"
-  },
   "dependencies": {
     "@unoapi/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.3.1",
-    "@types/vscode": "1.106.1",
+    "@types/vscode": "1.80.0",
     "@vscode/vsce": "latest"
   }
 }

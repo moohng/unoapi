@@ -62,8 +62,8 @@ importers:
         specifier: 24.3.1
         version: 24.3.1
       '@types/vscode':
-        specifier: 1.106.1
-        version: 1.106.1
+        specifier: 1.80.0
+        version: 1.80.0
       '@vscode/vsce':
         specifier: latest
         version: 3.7.1
@@ -583,8 +583,8 @@ packages:
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
 
-  '@types/vscode@1.106.1':
-    resolution: {integrity: sha512-R/HV8u2h8CAddSbX8cjpdd7B8/GnE4UjgjpuGuHcbp1xV6yh4OeqU4L1pKjlwujCrSFS0MOpwJAIs/NexMB1fQ==}
+  '@types/vscode@1.80.0':
+    resolution: {integrity: sha512-qK/CmOdS2o7ry3k6YqU4zD3R2AYlJfbwBoSbKpBoP+GpXNE+0NEgJOli4n0bm0diK5kfBnchgCEj4igQz/44Hg==}
 
   '@typespec/ts-http-runtime@0.3.2':
     resolution: {integrity: sha512-IlqQ/Gv22xUC1r/WQm4StLkYQmaaTsXAhUVsNE0+xiyf0yRFiH5++q78U3bw6bLKDCTmh0uqKB9eG9+Bt75Dkg==}
@@ -2400,7 +2400,7 @@ snapshots:
 
   '@types/sarif@2.1.7': {}
 
-  '@types/vscode@1.106.1': {}
+  '@types/vscode@1.80.0': {}
 
   '@typespec/ts-http-runtime@0.3.2':
     dependencies:

@@ -12,7 +12,7 @@
 # 开发完成后,创建 changeset
 pnpm changeset
 
-# 选择包: @unoapi/vscode
+# 选择包: unoapi-vscode-extension
 # 选择版本类型: patch/minor/major
 # 描述变更内容
 ```

@@ -8,13 +8,13 @@
     "postinstall": "node ./scripts/check.js",
     "build:core": "pnpm --filter @unoapi/core build",
     "build:cli": "pnpm --filter @unoapi/cli build",
-    "build:vscode": "pnpm --filter @unoapi/vscode build",
+    "build:vscode": "pnpm --filter unoapi-vscode-extension build",
     "build": "rimraf packages/*/dist -g && pnpm -r build",
     "local:changeset": "pnpm changeset",
     "local:version": "pnpm changeset version",
     "local:publish": "pnpm changeset publish --no-git-checks",
     "ci:publish": "pnpm build:core && pnpm build:cli && pnpm changeset publish",
-    "vscode:publish": "pnpm build:core && pnpm build:vscode && pnpm --filter @unoapi/vscode publish:marketplace"
+    "vscode:publish": "pnpm build:core && pnpm build:vscode && pnpm --filter unoapi-vscode-extension publish:marketplace"
   },
   "keywords": [],
   "author": "moohng@前端星河",

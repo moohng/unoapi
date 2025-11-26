@@ -3,7 +3,6 @@ import * as path from 'path';
 import {
   loadDoc,
   downloadDoc,
-  searchApi,
   generateCode,
   writeApiFile,
   writeModelFile,
