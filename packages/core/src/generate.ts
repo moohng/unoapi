@@ -5,49 +5,13 @@ import { formatObjName, upperFirst } from './tools.js';
 import {
   transformQueryCode,
   transformApiCode,
-  ApiOperationObject,
-  TypeFieldOption,
-  ApiContext,
   transformModelCode,
 } from './transform.js';
+import type { ApiOperationObject, TypeFieldOption, ApiContext, GenerateApi, GenerateModel, ModelSchemaCollection } from './types.js';
 import { FuncTplCallback } from './config.js';
 
-/**
- * 生成的代码
- */
-interface GenerateCode {
-  sourceCode: string;
-  /** 文件名称 abc */
-  fileName: string;
-  /** 文件全名称 abc.ts */
-  fileFullName: string;
-  /** 文件相对目录 users */
-  fileDir: string;
-  /** 文件相对路径 users/abc.ts */
-  filePath: string;
-}
-
-/**
- * 生成的模型
- */
-export interface GenerateModel extends GenerateCode {
-  /** 类型名称 */
-  typeName: string;
-}
-
-interface ModelSchemaCollection {
-  [schema: string]: SchemaObject | ReferenceObject;
-}
-
-/**
- * 生成的 API
- */
-export interface GenerateApi extends GenerateCode {
-  /** api 模型引用 */
-  refs?: string[];
-  /** 生成模型 */
-  getModels: (schemas: ModelSchemaCollection) => GenerateModel[];
-}
+// Re-export types for backward compatibility
+export type { GenerateApi, GenerateModel };
 
 interface GenerateOptions {
   /** 自定义类型映射 */
@@ -267,7 +231,7 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
     for (const subRef of refs) {
       allRefsSet.add(subRef);
     }
-    
+
     const fileFullName = `${objName}.ts`;
     allContextList.push({
       sourceCode: code,

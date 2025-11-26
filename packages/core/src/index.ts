@@ -6,5 +6,6 @@ export * from './write.js';
 export * from './tools.js';
 export * from './parse.js';
 export * from './transform.js';
+export * from './types.js';
 
 export type { OpenAPIObject } from 'openapi3-ts/oas30';

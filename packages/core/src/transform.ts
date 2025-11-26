@@ -1,37 +1,10 @@
-import { OperationObject, ParameterObject, SchemaObject } from 'openapi3-ts/oas30';
+import { SchemaObject } from 'openapi3-ts/oas30';
 import { parseSchemaObject } from './parse.js';
 import { formatObjName } from './tools.js';
+import type { HTTPMethod, ApiContext, TypeFieldOption, ApiOperationObject, ImportTypeItem } from './types.js';
 
-export type HTTPMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options';
-
-/**
- * Api 代码上下文
- */
-export interface ApiContext {
-  api: ApiOperationObject;
-  name: string;
-  url: string;
-  method: HTTPMethod;
-  comment?: string;
-  pathParams?: TypeFieldOption[];
-  queryType?: string;
-  bodyType?: string;
-  responseType?: string;
-  refs?: string[];
-}
-
-/**
- * 类型字段选项
- */
-export type TypeFieldOption = Omit<ParameterObject, 'in'>;
-
-/**
- * 解析后的 API 操作对象
- */
-export interface ApiOperationObject extends OperationObject {
-  path: string;
-  method: HTTPMethod;
-}
+// Re-export types for backward compatibility
+export type { HTTPMethod, ApiContext, TypeFieldOption, ApiOperationObject, ImportTypeItem };
 
 /**
  * 生成类型字段代码
@@ -186,11 +159,6 @@ export function ${name}(${paramStr}) {
   }
 
   return apiFuncStr;
-}
-
-export interface ImportTypeItem {
-  typeName: string;
-  path: string;
 }
 
 /**

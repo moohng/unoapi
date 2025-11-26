@@ -1,8 +1,8 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { existsPath } from './tools.js';
-import { ImportTypeItem, transformTypeIndexCode } from './transform.js';
-import { GenerateApi, GenerateModel } from './generate.js';
+import { transformTypeIndexCode } from './transform.js';
+import type { ImportTypeItem, GenerateApi, GenerateModel } from './types.js';
 
 interface WriteApiOptions {
   /** base 目录 */
