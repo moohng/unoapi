@@ -29,15 +29,16 @@ async function updateStatusBar() {
   const cwd = getWorkspaceRoot();
   process.chdir(cwd);
 
-  const cacheFile = (await loadConfig()).cacheFile;
-  let exists = await vscode.workspace.fs.stat(vscode.Uri.file(cacheFile)).then(() => true, () => false);
-  if (!exists) {
-    for (const type of [UnoConfigType.PACKAGE, UnoConfigType.JS, UnoConfigType.TS]) {
-      if (await existsConfig(type)) {
-        exists = true;
-        break;
-      }
+  let exists = false;
+  for (const type of [UnoConfigType.PACKAGE, UnoConfigType.JS, UnoConfigType.TS]) {
+    if (await existsConfig(type)) {
+      exists = true;
+      break;
     }
+  }
+  if (!exists) {
+    const cacheFile = (await loadConfig()).cacheFile;
+    exists = await vscode.workspace.fs.stat(vscode.Uri.file(cacheFile)).then(() => true, () => false);
   }
   if (exists) {
     // Config exists - ready state
@@ -171,38 +172,52 @@ export async function activate(context: vscode.ExtensionContext) {
       console.log('[UnoAPI] package.json changed, updating status...');
       await updateStatusBar();
     });
+    packageWatcher.onDidCreate(async () => {
+      console.log('[UnoAPI] package.json created, updating status...');
+      await updateStatusBar();
+    });
+    packageWatcher.onDidDelete(async () => {
+      console.log('[UnoAPI] package.json deleted, updating status...');
+      await updateStatusBar();
+    });
     context.subscriptions.push(packageWatcher);
+
+    const jsConfigPattern = new vscode.RelativePattern(workspaceRoot, 'unoapi.config.js');
+    const jsConfigWatcher = vscode.workspace.createFileSystemWatcher(jsConfigPattern);
+    jsConfigWatcher.onDidCreate(async () => {
+      console.log('[UnoAPI] unoapi.config.js created, updating status...');
+      await updateStatusBar();
+    });
+    jsConfigWatcher.onDidDelete(async () => {
+      console.log('[UnoAPI] unoapi.config.js deleted, updating status...');
+      await updateStatusBar();
+    });
+    context.subscriptions.push(jsConfigWatcher);
+
+    const tsConfigPattern = new vscode.RelativePattern(workspaceRoot, 'unoapi.config.ts');
+    const tsConfigWatcher = vscode.workspace.createFileSystemWatcher(tsConfigPattern);
+    tsConfigWatcher.onDidCreate(async () => {
+      console.log('[UnoAPI] unoapi.config.ts created, updating status...');
+      await updateStatusBar();
+    });
+    tsConfigWatcher.onDidDelete(async () => {
+      console.log('[UnoAPI] unoapi.config.ts deleted, updating status...');
+      await updateStatusBar();
+    });
+    context.subscriptions.push(tsConfigWatcher);
+
+    const cacheFile = (await loadConfig()).cacheFile;
+    const cacheFileWatcher = vscode.workspace.createFileSystemWatcher(cacheFile);
+    cacheFileWatcher.onDidCreate(async () => {
+      console.log('[UnoAPI] cache file created, updating status...');
+      await updateStatusBar();
+    });
+    cacheFileWatcher.onDidDelete(async () => {
+      console.log('[UnoAPI] cache file deleted, updating status...');
+      await updateStatusBar();
+    });
+    context.subscriptions.push(cacheFileWatcher);
   }
-
-  const jsConfigWatcher = vscode.workspace.createFileSystemWatcher('**/unoapi.config.js');
-  jsConfigWatcher.onDidCreate(async () => {
-    console.log('[UnoAPI] unoapi.config.js created, updating status...');
-    await updateStatusBar();
-  });
-  jsConfigWatcher.onDidChange(async () => {
-    console.log('[UnoAPI] unoapi.config.js changed, updating status...');
-    await updateStatusBar();
-  });
-  jsConfigWatcher.onDidDelete(async () => {
-    console.log('[UnoAPI] unoapi.config.js deleted, updating status...');
-    await updateStatusBar();
-  });
-  context.subscriptions.push(jsConfigWatcher);
-
-  const tsConfigWatcher = vscode.workspace.createFileSystemWatcher('**/unoapi.config.ts');
-  tsConfigWatcher.onDidCreate(async () => {
-    console.log('[UnoAPI] unoapi.config.ts created, updating status...');
-    await updateStatusBar();
-  });
-  tsConfigWatcher.onDidChange(async () => {
-    console.log('[UnoAPI] unoapi.config.ts changed, updating status...');
-    await updateStatusBar();
-  });
-  tsConfigWatcher.onDidDelete(async () => {
-    console.log('[UnoAPI] unoapi.config.ts deleted, updating status...');
-    await updateStatusBar();
-  });
-  context.subscriptions.push(tsConfigWatcher);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('unoapi.initConfig', async () => {
