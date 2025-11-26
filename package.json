@@ -10,6 +10,8 @@
     "build:cli": "pnpm --filter @unoapi/cli build",
     "build:vscode": "pnpm --filter unoapi-vscode-extension build",
     "build": "rimraf packages/*/dist -g && pnpm -r build",
+    "dev:web": "pnpm --filter website dev",
+    "build:web": "pnpm --filter website build",
     "local:changeset": "pnpm changeset",
     "local:version": "pnpm changeset version",
     "local:publish": "pnpm changeset publish --no-git-checks",
