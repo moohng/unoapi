@@ -2,7 +2,7 @@
   "name": "unoapi-vscode-extension",
   "displayName": "UnoAPI 自动化编码助手",
   "publisher": "qianduanxh",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "description": "自动生成前端 API 代码",
   "main": "./dist/extension.js",

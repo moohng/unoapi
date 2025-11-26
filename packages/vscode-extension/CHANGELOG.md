@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.0.4
+
+### Patch Changes
+
+- 7c7d9a1: 发布测试
+
 ## 0.0.3
 
 ### Patch Changes
