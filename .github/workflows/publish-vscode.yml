@@ -1,0 +1,78 @@
+name: Publish VS Code Extension
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Release VS Code Extension
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm run vscode:publish
+          commit: 'chore: release vscode extension'
+          title: 'chore: release vscode extension'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: vscode-v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          release_name: VS Code Extension v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          body: |
+            ## VS Code Extension Release
+            
+            Version: ${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+            
+            ### Changes
+            ${{ steps.changesets.outputs.changelog }}
+            
+            ### Installation
+            Install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=unoapi.unoapi-vscode)
+          draft: false
+          prerelease: false
+          
+      - name: Upload VSIX to Release
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: packages/vscode-extension/*.vsix
+          asset_name: unoapi-vscode-${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}.vsix
+          asset_content_type: application/zip

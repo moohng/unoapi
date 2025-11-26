@@ -3,8 +3,7 @@
   "displayName": "UnoAPI VSCode",
   "publisher": "unoapi",
   "version": "0.0.2",
-  "private": true,
-  "description": "在 VSCode 中生成前端 API 代码",
+  "description": "自动生成前端 API 代码",
   "main": "./dist/extension.js",
   "type": "commonjs",
   "engines": {
@@ -13,6 +12,17 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "openapi",
+    "api",
+    "codegen",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moohng/unoapi.git",
+    "directory": "packages/vscode-extension"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -73,7 +83,9 @@
   },
   "scripts": {
     "dev": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --sourcemap --watch",
-    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --external:esbuild"
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --external:esbuild",
+    "package": "vsce package --no-dependencies",
+    "publish:marketplace": "vsce publish --no-dependencies -p $VSCE_PAT"
   },
   "dependencies": {
     "@unoapi/core": "workspace:*"

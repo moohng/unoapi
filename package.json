@@ -13,7 +13,8 @@
     "local:changeset": "pnpm changeset",
     "local:version": "pnpm changeset version",
     "local:publish": "pnpm changeset publish --no-git-checks",
-    "ci:publish": "pnpm build && pnpm changeset publish"
+    "ci:publish": "pnpm build:core && pnpm build:cli && pnpm changeset publish",
+    "vscode:publish": "pnpm build:core && pnpm build:vscode && pnpm --filter @unoapi/vscode publish:marketplace"
   },
   "keywords": [],
   "author": "moohng@前端星河",
