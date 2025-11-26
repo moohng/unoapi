@@ -7,6 +7,8 @@
     "preinstall": "node ./scripts/check.js",
     "postinstall": "node ./scripts/check.js",
     "build:core": "pnpm --filter @unoapi/core build",
+    "build:cli": "pnpm --filter @unoapi/cli build",
+    "build:vscode": "pnpm --filter @unoapi/vscode build",
     "build": "rimraf packages/*/dist -g && pnpm -r build",
     "local:changeset": "pnpm changeset",
     "local:version": "pnpm changeset version",

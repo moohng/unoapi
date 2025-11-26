@@ -2,14 +2,13 @@
   "name": "@unoapi/cli",
   "version": "2.0.2",
   "description": "UnoAPI 的命令行工具",
-  "main": "dist/index.js",
+  "main": "dist/cli.js",
   "bin": {
     "uno": "dist/cli.js",
     "unoapi": "dist/cli.js"
   },
   "scripts": {
-    "build:esm": "tsc -p tsconfig.json",
-    "build": "esbuild src/cli.ts --platform=node --format=cjs --minify --outfile=dist/cli.js"
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --minify --outfile=dist/cli.js --external:@unoapi/core --external:commander --external:consola --external:@inquirer/prompts"
   },
   "files": [
     "dist"
