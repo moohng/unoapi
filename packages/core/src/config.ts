@@ -115,7 +115,7 @@ export async function generateConfigFile(url = 'https://api.example.com/openapi.
     try {
       const packageContent = await fs.readFile(configPath, 'utf-8');
       packageJson = JSON.parse(packageContent);
-    } catch {}
+    } catch { }
     packageJson.unoapi = {
       openapiUrl: url,
     };
@@ -164,7 +164,7 @@ export async function loadConfig(): Promise<UnoConfig> {
     if (packageJson.unoapi && Object.keys(packageJson.unoapi).length > 0) {
       return checkConfig(packageJson.unoapi);
     }
-  } catch {}
+  } catch { }
 
   // 从配置文件中加载配置
   let filePath = getConfigFile(UnoConfigType.JS);
@@ -256,6 +256,7 @@ export async function existsConfig(type: UnoConfigType) {
   const configPath = getConfigFile(type);
   if (type === UnoConfigType.PACKAGE) {
     try {
+      delete require.cache[require.resolve(configPath)];
       const packageJson = require(configPath);
       return !!packageJson.unoapi;
     } catch {

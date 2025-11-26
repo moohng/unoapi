@@ -38,6 +38,7 @@ async function fetchDoc(url: string) {
  */
 export function loadDoc(cacheFile: string) {
   try {
+    delete require.cache[require.resolve(cacheFile)];
     const doc = require(cacheFile) as OpenAPIObject;
     return doc;
   } catch {
