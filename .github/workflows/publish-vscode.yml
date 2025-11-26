@@ -1,4 +1,4 @@
-name: Publish VS Code Extension
+name: 发布 VSCode 扩展
 
 on:
   push:
