@@ -2,7 +2,7 @@
   "name": "@unoapi/vscode",
   "displayName": "UnoAPI VSCode",
   "publisher": "unoapi",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "在 VSCode 中生成前端 API 代码",
   "main": "./dist/extension.js",
