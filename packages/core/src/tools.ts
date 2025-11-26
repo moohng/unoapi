@@ -15,7 +15,7 @@ export function formatObjName(objName: string) {
     .replace(/»/g, '>');
   name = name.replace(/[^<>]+/g, (match) => {
     return match.replace(/[^a-zA-Z0-9]/g, '') || match;
-  });
+  }).replace(/List<(.+)>/g, '$1[]');
   return name;
 }
 

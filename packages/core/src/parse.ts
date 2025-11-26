@@ -66,8 +66,9 @@ export function parseSchemaObject(property?: string | SchemaObject | ReferenceOb
   function parse(property?: string | SchemaObject | ReferenceObject): string {
     if (typeof property !== 'string') {
       // 引用类型
-      const ref = (property as ReferenceObject)?.$ref;
+      let ref = (property as ReferenceObject)?.$ref;
       if (ref) {
+        ref = decodeURIComponent(ref);
         refs.push(ref);
         const name = formatObjName(ref);
         const parseType = parse(name);

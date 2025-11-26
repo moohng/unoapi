@@ -221,6 +221,9 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
 
     // 对象名称
     let objName = formatObjName(refKey);
+    if (objName.includes('<')) {
+      objName = objName.replace(/<.*>/g, ''); // 去掉泛型参数
+    }
     const { properties } = modelObj as SchemaObject;
     if (!objName || !properties || /^[a-z]/.test(objName)) {
       return;

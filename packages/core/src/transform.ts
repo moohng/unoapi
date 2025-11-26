@@ -50,6 +50,8 @@ export function transformQueryCode(params: TypeFieldOption[], name: string, type
   return { code: codeStr, refs: allRefs };
 }
 
+const GENERIC_TYPE_NAMES = ['T', 'E', 'U', 'K', 'V'];
+
 /**
  * 生成模型接口代码
  * @param modelObj 
@@ -57,17 +59,23 @@ export function transformQueryCode(params: TypeFieldOption[], name: string, type
  * @returns 
  */
 export function transformModelCode(modelObj: SchemaObject, refKey: string, typeMapping?: Record<string, string>) {
-  const { required, properties, description: objDesc } = modelObj as SchemaObject;
+  const { required, properties, description: objDesc, title } = modelObj as SchemaObject;
 
-  let objName = formatObjName(refKey);
+  const originalName = formatObjName(refKey); // 可能是 ResponseDTO<List<ProductBaseVO>>
+  let objName = originalName; 
+  if (objName.includes('<')) {
+    objName = objName.replace(/<.*>/g, ''); // 去掉泛型参数
+  }
+
   let codeStr = `export default interface ${objName} {\n  // @UNOAPI[${refKey}]\n`;
-  if (objDesc) {
-    codeStr = `/** ${objDesc} */\n${codeStr}`;
+  if (objDesc || title) {
+    codeStr = `/** ${objDesc || title} */\n${codeStr}`;
   }
 
   // 外部引用类型
   const importRefKeys = new Set<string>();
   const refs: string[] = [];
+  let genericIndex = -1;
 
   // 遍历属性
   for (const propKey in properties) {
@@ -75,9 +83,17 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
     const property = properties[propKey];
 
     let { type: tsType, refs: subRefs } = parseSchemaObject(property, typeMapping);
+    const isGeneric = originalName.includes(`<${tsType.replace('[]', '')}>`);
     for (const subRef of subRefs) {
       refs.push(subRef);
-      importRefKeys.add(subRef.replace('#/components/schemas/', ''));
+      if (!isGeneric) {
+        importRefKeys.add(subRef.replace('#/components/schemas/', ''));
+      }
+    }
+
+    // 处理泛型
+    if (isGeneric) {
+      tsType = tsType.replace(/\w+/, GENERIC_TYPE_NAMES[++genericIndex]);
     }
 
     const isRequired = required?.includes(propKey);
@@ -99,6 +115,11 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
   }
 
   codeStr += '}\n';
+
+  // 处理泛型参数
+  if (genericIndex > -1) {
+    codeStr = codeStr.replace(`interface ${objName}`, `interface ${objName}<${GENERIC_TYPE_NAMES.slice(0, genericIndex + 1).join(', ')}>`);
+  }
 
   // 导入外部类型
   let importStr = '';

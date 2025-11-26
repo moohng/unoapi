@@ -156,8 +156,9 @@ export function registerApiCommand(program: Command) {
         }
 
         consola.success(`本次生成 api: ${genApis.length} 个， model: ${modelCount} 个`);
-      } catch {
+      } catch (error) {
         consola.error(new Error('代码生成失败！'));
+        consola.error(error);
         process.exit(1);
       }
     });
