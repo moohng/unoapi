@@ -1,113 +1,87 @@
-# UnoAPI CLI
+# @unoapi/cli
 
-[![build](https://github.com/moohng/unoapi/actions/workflows/release.yaml/badge.svg)](https://github.com/moohng/unoapi/actions/workflows/release.yaml)
 [![NPM Version](https://img.shields.io/npm/v/@unoapi/cli.svg?style=flat)](https://www.npmjs.org/package/@unoapi/cli)
-[![NPM Downloads](https://img.shields.io/npm/dm/@unoapi/cli.svg?style=flat)](https://npmcharts.com/compare/@unoapi/cli?minimal=true)
-[![install size](https://packagephobia.com/badge?p=@unoapi/cli)](https://packagephobia.com/result?p=@unoapi/cli)
+[![License](https://img.shields.io/npm/l/@unoapi/cli.svg?style=flat)](https://github.com/moohng/unoapi/blob/main/LICENSE)
 
-UnoAPI CLI 是一个为现代前后端分离项目设计的 API 工具链命令行工具，旨在提升 API 开发、维护与协作效率。它支持基于 OpenAPI 规范的接口文档解析、代码生成等功能，助力团队实现高效、规范、自动化的 API 管理流程。
+**@unoapi/cli** 是 UnoAPI 的命令行界面工具。它专为喜欢终端操作或需要集成到 CI/CD 流程的开发者设计。
 
-## 功能特性
+## ✨ 功能特性
 
-- **代码生成**：一键生成 TypeScript API 请求代码、类型定义等，提升前端开发效率。
-- **零配置**：不需要写繁琐配置文件，开箱即用。
-- **零侵入**：对项目没有任何污染，用完即弃、不留痕迹。
-- **CLI 友好**：提供直观易用的命令行界面，支持常用参数与交互能力。
-- **搜索能力**：不需要知道具体的接口地址，可进行模糊搜索。
+- **🚀 快速初始化**: 一键生成项目配置文件。
+- **📥 文档同步**: 快速下载并缓存 OpenAPI 文档。
+- **⚡ 代码生成**: 基于配置自动生成 API 接口和类型定义。
+- **🔍 交互式体验**: 提供友好的命令行交互提示。
 
-## 安装【可选】
+## 📦 安装
 
-使用 [pnpm](https://pnpm.io/) 或 [npm](https://www.npmjs.com/) 进行全局安装：
+推荐全局安装以便在任何地方使用：
 
 ```bash
-pnpm add -g @unoapi/cli
-# 或
 npm install -g @unoapi/cli
+# 或
+pnpm add -g @unoapi/cli
 ```
 
-## 快速开始
+也可以使用 `npx` 临时运行：
 
-- **在线模式**
-
-   零配置、零侵入快速体验：
-
-   ```bash
-   npx @unoapi/cli -u https://api.example.com/api-json
-   # 或
-   uno -u https://api.example.com/api-json
-   ```
-
-- **离线模式**
-
-   将接口文档下载到本地后，即可离线使用，提升效率：
-
-   ```bash
-   # 下载文档
-   uno download https://api.example.com/api-json
-   # 生成代码
-   uno
-   ```
-
-- **更多配置**
-
-   一键生成本地配置文件，可定制化更多功能：
-
-   ```bash
-   # 生成配置文件
-   uno init
-   # 生成代码
-   uno
-   ```
-
-## 常用命令
-
-| 命令                | 说明                         |
-|---------------------|------------------------------|
-| `unoapi init`       | 初始化配置文件               |
-| `unoapi download`       | 同步远程 OpenAPI 文档        |
-| `unoapi api`   | 生成 API 客户端代码          |
-
-## 配置说明
-
-工具默认读取项目根目录下的 `unoapi.config.ts` 配置文件。配置项包括：
-
-```ts
-export interface UnoUserConfig {
-  /**
-   * OpenAPI URL 地址，可以是字符串或返回字符串的函数
-   */
-  openapiUrl?: OpenApiInput;
-  /**
-   * 输出目录，默认 src/api；数组表示models输出目录
-   */
-  output?: string | [string, string];
-  /**
-   * 缓存文件，默认 [output]/.openapi-cache.json
-   */
-  cacheFile?: string;
-  /**
-   * 自定义类型映射
-   */
-  typeMapping?: Record<string, string>;
-  /**
-   * 自定义 api 函数
-   */
-  funcTpl?: FuncTplCallback;
-  /**
-   * 只生成 model 代码
-   */
-  onlyModel?: boolean;
-  /**
-   * 是否将 model 类型写入全局
-   */
-  asGlobalModel?: boolean;
-  /**
-   * api 函数的头部导入代码
-   */
-  imports?: string | string[];
-}
+```bash
+npx @unoapi/cli --help
 ```
 
----
+## 🚀 快速开始
 
-UnoAPI CLI —— 让 API 开发更高效、更规范、更自动化。
+### 1. 初始化项目
+
+在项目根目录下运行：
+
+```bash
+unoapi init
+```
+
+这将引导你创建一个 `unoapi.config.ts` 配置文件。
+
+### 2. 下载文档
+
+```bash
+unoapi download
+```
+
+这将根据配置的 URL 下载 OpenAPI 文档并缓存到本地。
+
+### 3. 生成代码
+
+```bash
+unoapi api
+```
+
+这将根据配置生成 API 接口和类型定义文件。
+
+## 📖 命令参考
+
+| 命令 | 别名 | 说明 |
+| :--- | :--- | :--- |
+| `unoapi init` | - | 初始化配置文件 |
+| `unoapi download` | `dl` | 下载 OpenAPI 文档 |
+| `unoapi api` | `gen` | 生成 API 代码 |
+| `unoapi help` | - | 查看帮助信息 |
+
+## ⚙️ 配置文件
+
+CLI 会自动读取项目根目录下的 `unoapi.config.ts` 或 `unoapi.config.js`。
+
+```typescript
+import { defineUnoConfig } from '@unoapi/core';
+
+export default defineUnoConfig({
+  openapiUrl: 'https://api.example.com/v3/api-docs',
+  output: 'src/api',
+  // ...其他配置
+});
+```
+
+更多配置选项请参考 [@unoapi/core 文档](../core/README.md#配置参考)。
+
+## 🔗 相关链接
+
+- [UnoAPI Core](../core/README.md)
+- [VS Code Extension](../vscode-extension/README.md)

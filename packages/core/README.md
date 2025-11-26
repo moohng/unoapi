@@ -1,31 +1,21 @@
 # @unoapi/core
 
-[![build](https://github.com/moohng/unoapi/actions/workflows/release.yaml/badge.svg)](https://github.com/moohng/unoapi/actions/workflows/release.yaml)
 [![NPM Version](https://img.shields.io/npm/v/@unoapi/core.svg?style=flat)](https://www.npmjs.org/package/@unoapi/core)
-[![NPM Downloads](https://img.shields.io/npm/dm/@unoapi/core.svg?style=flat)](https://npmcharts.com/compare/@unoapi/core?minimal=true)
-[![install size](https://packagephobia.com/badge?p=@unoapi/core)](https://packagephobia.com/result?p=@unoapi/core)
+[![License](https://img.shields.io/npm/l/@unoapi/core.svg?style=flat)](https://github.com/moohng/unoapi/blob/main/LICENSE)
 
-@unoapi/core 是 UnoAPI 体系的核心库，专为现代前后端分离项目提供高效、类型安全的 API 自动化编码能力。它聚焦于 OpenAPI 规范解析、类型推导、代码生成、接口文档处理等底层能力，为 CLI、VSCode 插件、脚手架等上层工具提供统一的 API 生成与管理基础。
+**@unoapi/core** 是 UnoAPI 生态系统的核心引擎。它负责 OpenAPI 文档的解析、类型推导和代码生成逻辑。
 
-## 核心特性
+如果你正在构建自己的 API 工具、脚手架或 IDE 插件，这个库将为你提供强大的底层支持。
 
-- **OpenAPI 解析**：支持 OpenAPI 3.x 规范，自动解析接口定义，提取类型、路径、参数、响应等信息。
-- **类型推导与生成**：自动生成 TypeScript 类型定义，保障前端/后端类型一致性。
-- **代码生成引擎**：可扩展的模板系统，支持自定义 API 客户端、类型、注释等多种输出。
-- **零侵入集成**：可作为独立库集成到任意 Node.js/TypeScript 项目，也可作为 CLI/插件的依赖。
-- **灵活配置**：支持多种配置方式，兼容多项目结构和团队协作需求。
+## ✨ 核心特性
 
-## 主要能力
+- **OpenAPI 3.x 支持**: 完整的 OpenAPI 规范解析能力。
+- **TypeScript 类型生成**: 自动从 Schema 生成精确的 TypeScript 接口。
+- **AST 级代码生成**: 不仅仅是字符串拼接，提供更安全的代码生成。
+- **高度可配置**: 支持自定义模板、类型映射和输出规则。
+- **平台无关**: 可以在 Node.js、浏览器（部分功能）或任何 JS 运行时中使用。
 
-- OpenAPI JSON 文档解析
-- TypeScript 类型与接口自动生成
-- API 客户端代码生成（可自定义模板）
-- 配置文件（unoapi.config.ts/js）自动生成与加载
-- 支持多输出目录、缓存、类型映射等高级特性
-
-## 安装
-
-推荐通过 npm 或 pnpm 安装：
+## 📦 安装
 
 ```bash
 pnpm add @unoapi/core
@@ -33,43 +23,55 @@ pnpm add @unoapi/core
 npm install @unoapi/core
 ```
 
-## 核心用法
+## 💻 编程式使用
 
-```ts
-// 加载配置
-const config = await loadConfig();
+```typescript
+import { loadConfig, downloadDoc, searchApi, generateCode, writeApiFile } from '@unoapi/core';
 
-// 下载文档
-const doc = await downloadDoc(config.openapiUrl, config.cacheFile);
+async function main() {
+  // 1. 加载配置
+  const config = await loadConfig();
 
-// 搜索api接口
-const apis = searchApi(doc, term);
+  // 2. 下载并解析文档
+  const doc = await downloadDoc(config.openapiUrl, config.cacheFile);
 
-// 生成 api 代码
-const genApis = generateCode(apis, {
-  funcTpl: config.funcTpl,
-  typeMapping: config.typeMapping,
-});
+  // 3. 搜索接口 (例如搜索 'user')
+  const apis = searchApi(doc, 'user');
 
-// 写入 api 文件
-await writeApiFile(genApi, { base: baseApiOutput, imports: config.imports });
+  // 4. 生成代码
+  const generatedApis = generateCode(apis, {
+    funcTpl: config.funcTpl,
+    typeMapping: config.typeMapping,
+  });
 
-// 获取类型定义代码
-const genModels = genApi.getModels(doc.components.schemas);
+  // 5. 写入文件
+  for (const api of generatedApis) {
+    await writeApiFile(api, {
+      base: 'src/api',
+      imports: config.imports
+    });
+  }
+}
 
-// 写入类型定义文件
-await writeModelFile(genModels, {
-  base: baseModelOutput,
-  asGlobalModel: options.globalModel ?? config.asGlobalModel,
-});
+main();
 ```
 
-## 适用场景
+## ⚙️ 配置参考
 
-- 前端 API 类型自动生成
-- 定制化 API 客户端生成
-- 作为 CLI、脚手架、IDE 插件的底层依赖
+`UnoConfig` 接口定义了所有可用的配置选项：
 
----
+| 选项 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `openapiUrl` | `string \| () => string` | - | OpenAPI 文档的 URL 地址 |
+| `output` | `string \| [string, string]` | `'src/api'` | 输出目录。如果是数组，第二个元素为 Model 输出目录 |
+| `cacheFile` | `string` | `'.openapi-cache.json'` | 文档缓存文件路径 |
+| `typeMapping` | `Record<string, string>` | - | 自定义类型映射 (例如 `{ 'integer': 'number' }`) |
+| `funcTpl` | `(context) => string` | - | 自定义 API 函数生成模板 |
+| `imports` | `string \| string[]` | - | API 文件头部的导入语句 |
+| `onlyModel` | `boolean` | `false` | 是否只生成 Model 类型 |
+| `asGlobalModel` | `boolean` | `false` | 是否生成全局命名空间的类型 |
 
-@unoapi/core —— 让 API 类型与代码生成更高效、更可靠、更自动化。
+## 🔗 相关链接
+
+- [UnoAPI CLI](../cli/README.md)
+- [VS Code Extension](../vscode-extension/README.md)

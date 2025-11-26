@@ -146,8 +146,8 @@ MIT
 
 ## 🔗 相关链接
 
-- [UnoAPI CLI](https://www.npmjs.com/package/@unoapi/cli) - 命令行工具
-- [UnoAPI Core](https://www.npmjs.com/package/@unoapi/core) - 核心库
+- [UnoAPI CLI](../cli/README.md) - 命令行工具
+- [UnoAPI Core](../core/README.md) - 核心库
 - [OpenAPI 规范](https://swagger.io/specification/)
 
 ---
