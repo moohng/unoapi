@@ -33,6 +33,7 @@ jobs:
         run: pnpm install
         
       - name: Publish to VS Code Marketplace
+        if: startsWith(github.event.head_commit.message, 'Version Packages')
         id: changesets
         uses: changesets/action@v1
         with:
