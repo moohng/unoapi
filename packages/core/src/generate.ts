@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject } from 'openapi3-ts/oas30';
 import { parseRefKey, parseProperty, parseUrl } from './parse.js';
-import { isSimilar, upperFirst } from './tools.js';
+import { getAllowTypeName, isAllowGenerate, isSimilar, upperFirst } from './tools.js';
 import {
   transformQueryCode,
   transformApiCode,
@@ -18,6 +18,8 @@ interface GenerateOptions {
   typeMapping?: Record<string, string>;
   /** 自定义函数模板 */
   funcTpl?: FuncTplCallback;
+  /** 忽略的接口 */
+  ignores?: (string | RegExp)[];
 }
 
 /**
@@ -26,7 +28,9 @@ interface GenerateOptions {
  * @param options 生成选项
  */
 export function generateCode(apis: ApiOperationObject[], options?: GenerateOptions) {
-  return apis.map((api) => generateSingleApiCode(api, options));
+  return apis
+    .filter((api) => isAllowGenerate(api.path, options?.ignores))
+    .map((api) => generateSingleApiCode(api, options));
 }
 
 interface GenerateSingleOptions extends GenerateOptions {
@@ -69,7 +73,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     required: true,
   }));
 
-  const apiRefs: string[] = [];
+  let apiRefs: string[] = [];
 
   // 入参
   let bodyTypeName: string | undefined;
@@ -83,7 +87,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
       schema = reqBody as ReferenceObject;
     }
     const { tsType, refs } = parseProperty(schema, options?.typeMapping);
-    bodyTypeName = tsType;
+    bodyTypeName = getAllowTypeName(tsType, options?.ignores);
     apiRefs.push(...refs);
   }
 
@@ -135,13 +139,15 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
         const schema = resp.content[mediaType].schema;
         if (schema) {
           const { tsType, refs } = parseProperty(schema, options?.typeMapping);
-          responseTypeName = tsType;
+          responseTypeName = getAllowTypeName(tsType, options?.ignores);
           apiRefs.push(...refs);
         }
       }
       break;
     }
   }
+
+  apiRefs = apiRefs.filter((item) => isAllowGenerate(item, options?.ignores));
 
   // 构建 API 上下文
   let apiContext: ApiContext = {
@@ -182,7 +188,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     filePath,
     refs: apiRefs,
     getModels: (schemas) => {
-      const results = generateModelCode(schemas, apiRefs, { typeMapping: options?.typeMapping });
+      const results = generateModelCode(schemas, apiRefs, { typeMapping: options?.typeMapping, ignores: options?.ignores });
       for (const codeContext of results || []) {
         const filePath = path.join(dirName, codeContext.fileFullName);
         generateModelContextList.push({
@@ -197,7 +203,8 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
 }
 
 interface GenerateModelOptions {
-  typeMapping?: Record<string, string>
+  typeMapping?: Record<string, string>;
+  ignores?: (string | RegExp)[];
 }
 
 /**
@@ -251,7 +258,9 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
   }
 
   for (const ref of allRefsSet) {
-    generateCode(ref);
+    if (isAllowGenerate(ref, options?.ignores)) {
+      generateCode(ref);
+    }
   }
 
   return allContextList;

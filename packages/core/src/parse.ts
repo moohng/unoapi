@@ -59,11 +59,12 @@ export function parseUrl(input: string) {
 export function parseRefKey(refKey: string) {
   // 去掉包名 com.xxx.common.dto2.  、非法字符
   const name = refKey
-    .replace(/[\w-]+(\.|\/)/g, '')
+    .replace('#/components/schemas/', '')
+    .replace(/[#\w-]+(\.|\/)/g, '')
     .replace(/«/g, '<')
     .replace(/»/g, '>')
     .replace(/[^<>]+/g, (match) => {
-      return match.replace(/[^a-zA-Z0-9]/g, '') || match;
+      return match.replace(/[^a-zA-Z0-9\[\]]/g, '') || match;
     })
     .replace(/List<(\w+)>/g, '$1[]');
 
@@ -108,13 +109,15 @@ function parseBase(property: string, typeMapping?: Record<string, string>) {
 export function parseProperty(property?: string | SchemaObject | ReferenceObject, typeMapping?: Record<string, string>) {
   const refs: string[] = [];
 
+  let tsFileName: string | undefined;
   function parse(property?: SchemaObject | ReferenceObject): string {
     // 引用类型
     let ref = (property as ReferenceObject)?.$ref;
     if (ref) {
       ref = decodeURIComponent(ref);
       refs.push(ref);
-      const { typeName } = parseRefKey(ref);
+      const { typeName, fileName } = parseRefKey(ref);
+      tsFileName = fileName;
       const parseType = parseBase(typeName, typeMapping);
       return isBaseType(parseType) && parseType !== 'any' ? parseType : typeName;
     }
@@ -128,8 +131,13 @@ export function parseProperty(property?: string | SchemaObject | ReferenceObject
     return parseBase((property as SchemaObject)?.type as string, typeMapping);
   }
 
+  if (typeof property === 'string') {
+    return { tsType: parseBase(property, typeMapping), refs: [] };
+  }
+
   return {
-    tsType: typeof property === 'string' ? parseBase(property, typeMapping) : parse(property),
+    tsType: parse(property),
     refs: refs,
+    tsFileName,
   };
 }

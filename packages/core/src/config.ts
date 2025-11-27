@@ -44,6 +44,11 @@ export interface UnoUserConfig {
    * api 函数的头部导入代码
    */
   imports?: string | string[];
+  /**
+   * 忽略的 model 名称（如：ResponseDTO）、url
+   * 全匹配
+   */
+  ignores?: (string | RegExp)[];
 }
 
 /**
@@ -137,6 +142,7 @@ export default defineUnoConfig({
   // onlyModel: false,
   // asGlobalModel: false,
   // imports: ['import request from \'@utils/request\';'],
+  // ignores: ['ResponseDTO'],
 });
 `;
     if (type === UnoConfigType.JS) {

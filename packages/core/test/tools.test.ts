@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
-import { isBaseType, upperFirst, existsPath, isSimilar } from '../src/tools';
+import { isBaseType, upperFirst, existsPath, isSimilar, isAllowGenerate, getAllowTypeName } from '../src/tools';
 
 // Mock fs/promises
 vi.mock('fs/promises');
@@ -80,6 +80,43 @@ describe('existsPath', () => {
       const result = await existsPath(path);
       expect(result).toBe(expected);
       expect(fs.access).toHaveBeenCalledWith(path);
+    });
+  }
+});
+
+describe('isAllowGenerate', () => {
+  const testCases = [
+    { name: '/declarer/bindingDeclarer', ignores: ['/declarer/bindingDeclarer'], expected: false },
+    { name: '/declarer/bindingDeclarer', ignores: ['declarer/bindingDeclarer'], expected: true },
+    { name: '#/components/schemas/Abc', ignores: [/Ab/], expected: false },
+    { name: '#/components/schemas/com.example.dto.UserDTO', ignores: ['UserDTO'], expected: false },
+    { name: 'def', ignores: ['abc'], expected: true },
+    { name: 'abc', ignores: undefined, expected: true },
+    { name: undefined, ignores: ['abc'], expected: false },
+  ];
+
+  for (const { name, ignores, expected } of testCases) {
+    it(`测试：${name} ${ignores}`, () => {
+      expect(isAllowGenerate(name, ignores)).toBe(expected);
+    });
+  }
+});
+
+describe('getAllowTypeName', () => {
+  const testCases = [
+    { tsType: 'User', ignores: undefined, expected: 'User' },
+    { tsType: 'User[]', ignores: undefined, expected: 'User[]' },
+    { tsType: 'Res<User>', ignores: undefined, expected: 'Res<User>' },
+    { tsType: 'User', ignores: ['User'], expected: '' },
+    { tsType: 'User[]', ignores: ['User'], expected: '' },
+    { tsType: 'Res<User>', ignores: ['User'], expected: 'Res<User>' },
+    { tsType: 'Res<User[]>', ignores: ['Res', 'User'], expected: '' },
+    { tsType: 'Res<User[]>', ignores: ['Res'], expected: 'User[]' },
+  ];
+
+  for (const { tsType, ignores, expected } of testCases) {
+    it(`测试：${tsType} ${ignores}`, () => {
+      expect(getAllowTypeName(tsType, ignores)).toBe(expected);
     });
   }
 });

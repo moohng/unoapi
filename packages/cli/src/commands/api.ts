@@ -117,11 +117,13 @@ export function registerApiCommand(program: Command) {
           funcName: options.func,
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
+          ignores: config.ignores,
         }));
       } else {
         genApis = generateCode(urls as ApiOperationObject[], {
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
+          ignores: config.ignores,
         });
       }
 

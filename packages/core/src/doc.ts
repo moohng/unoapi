@@ -24,7 +24,7 @@ export async function downloadDoc(input: OpenApiInput, output?: string) {
 
 async function fetchDoc(url: string) {
   const res = await fetch(url);
-  const resJson = await res.json();
+  const resJson = await res.json() as any;
   if (!res.ok) {
     throw new Error(`无法获取 OpenAPI 文档：${res.status} ${res.statusText}，${resJson.message}`);
   }

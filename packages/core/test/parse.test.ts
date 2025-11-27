@@ -28,10 +28,13 @@ describe('parseUrl', () => {
 describe('parseRefKey', () => {
   const testCases = [
     { refKey: 'UserDTO', typeName: 'UserDTO', fileName: 'UserDTO' },
+    { refKey: 'Response<UserDTO>', typeName: 'Response<UserDTO>', fileName: 'Response' },
+    { refKey: 'Response<UserDTO[]>', typeName: 'Response<UserDTO[]>', fileName: 'Response' },
     { refKey: 'com.example.dto.UserDTO', typeName: 'UserDTO', fileName: 'UserDTO' },
-    { refKey: 'Response«com.example.dto.User»', typeName: 'Response<User>', fileName: 'Response' },
+    { refKey: '#/components/schemas/Response«com.example.dto.User»', typeName: 'Response<User>', fileName: 'Response' },
     { refKey: 'Response«List«User对象»»', typeName: 'Response<User[]>', fileName: 'Response' },
     { refKey: 'com.zmn.common.dto2.ResponseDTO«com.zmn.common.dto2.PageResult«RecommendItemVO对象»»', typeName: 'ResponseDTO<PageResult<RecommendItemVO>>', fileName: 'ResponseDTO' },
+    { refKey: '#/components/schemas/发票对象', typeName: '发票对象', fileName: '发票对象' },
   ];
 
   for (const testCase of testCases) {
@@ -55,15 +58,16 @@ describe('parseProperty', () => {
     { property: 'unknown', tsType: 'any', refs: [] },
     { property: 'ABBSBSB', tsType: 'any', refs: [] },
     { property: { type: 'long' }, tsType: 'number', refs: [] },
-    { property: { type: 'array', items: { $ref: '#/components/schemas/com.example.dto.UserDTO' } }, tsType: 'UserDTO[]', refs: ['#/components/schemas/com.example.dto.UserDTO'] },
-    { property: { $ref: '#/components/schemas/com.example.dto.UserDTO' }, tsType: 'UserDTO', refs: ['#/components/schemas/com.example.dto.UserDTO'] },
-    { property: { $ref: '#/components/schemas/Response«List«User对象»»' }, tsType: 'Response<User[]>', refs: ['#/components/schemas/Response«List«User对象»»'] },
+    { property: { type: 'array', items: { $ref: '#/components/schemas/com.example.dto.UserDTO' } }, tsType: 'UserDTO[]', refs: ['#/components/schemas/com.example.dto.UserDTO'], tsFileName: 'UserDTO' },
+    { property: { $ref: '#/components/schemas/com.example.dto.UserDTO' }, tsType: 'UserDTO', refs: ['#/components/schemas/com.example.dto.UserDTO'], tsFileName: 'UserDTO' },
+    { property: { $ref: '#/components/schemas/Response«List«User对象»»' }, tsType: 'Response<User[]>', refs: ['#/components/schemas/Response«List«User对象»»'], tsFileName: 'Response' },
   ];
   for (const testCase of testCases) {
     it(`测试：${typeof testCase.property === 'string' ? testCase.property : JSON.stringify(testCase.property)}`, () => {
       expect(parseProperty(testCase.property as any)).toEqual({
         tsType: testCase.tsType,
         refs: testCase.refs,
+        tsFileName: testCase.tsFileName,
       });
     });
   }

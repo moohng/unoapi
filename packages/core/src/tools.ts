@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import { parseRefKey } from './parse';
 
 /**
  * 是否是基本类型
@@ -41,3 +42,42 @@ export async function existsPath(filePath: string) {
 export function isSimilar(str1?: string, str2?: string) {
   return str1?.toLocaleLowerCase() === str2?.toLocaleLowerCase();
 }
+
+/**
+ * 判断是否允许生成
+ * @param name
+ * @param ignores
+ * @returns
+ */
+export function isAllowGenerate(name?: string, ignores?: (string | RegExp)[]) {
+  return !!name && !ignores?.some(i => {
+    if (i instanceof RegExp) {
+      return i.test(name);
+    }
+    if (name.startsWith('#') || name.indexOf('/') === -1) {
+      const { fileName } = parseRefKey(name);
+      return fileName === i;
+    }
+    return name === i;
+  })
+};
+
+/**
+ * 获取允许生成的类型名称
+ * @param tsType
+ * @param ignores
+ * @returns
+ */
+export function getAllowTypeName(tsType: string, ignores?: (string | RegExp)[]): string {
+  const matched = tsType.match(/(\w+)<(.+)>/);
+  let name;
+  if (matched) {
+    name = matched[1];
+  } else {
+    name = tsType;
+  }
+  if (isAllowGenerate(name, ignores)) {
+    return tsType;
+  }
+  return matched?.[2] ? getAllowTypeName(matched?.[2], ignores) : '';
+};

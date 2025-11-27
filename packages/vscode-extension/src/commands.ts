@@ -8,6 +8,7 @@ import {
   generateConfigFile,
   existsConfig,
   ApiOperationObject,
+  UnoConfig,
 } from '@unoapi/core';
 import { updateStatusBar, setStatusBarLoading } from './statusBar.js';
 import { pickApis } from './apiPicker.js';
@@ -107,7 +108,7 @@ export function registerGenerateApiCommand(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('unoapi.generateApi', async (uri?: vscode.Uri) => {
       const cwd = getWorkspaceRoot();
       process.chdir(cwd);
-      let config: any;
+      let config: UnoConfig;
       try {
         config = await loadConfig();
       } catch (e: any) {
