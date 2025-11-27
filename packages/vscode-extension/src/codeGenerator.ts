@@ -4,10 +4,9 @@ import {
   loadDoc,
   downloadDoc,
   generateCode,
-  writeApiFile,
+  writeApiToFile,
   writeModelToFile,
   generateSingleApiCode,
-  appendToFile,
   ApiOperationObject,
   OpenAPIObject,
   GenerateApi,
@@ -85,13 +84,7 @@ export async function generateApiCode(options: GenerateOptions): Promise<{ apiCo
     const baseApiOutput = outputDir;
 
     if (!onlyModel) {
-      if (isFileTarget && targetFile) {
-        // Append to specific file
-        await appendToFile(targetFile, genApi.sourceCode, config.imports);
-      } else {
-        // Write to directory structure
-        await writeApiFile(genApi, { base: baseApiOutput, imports: config.imports });
-      }
+      await writeApiToFile(genApi, { base: baseApiOutput, imports: config.imports, filePath: isFileTarget ? targetFile : undefined });
     }
 
     if (doc.components?.schemas) {
@@ -100,7 +93,7 @@ export async function generateApiCode(options: GenerateOptions): Promise<{ apiCo
       if (!onlyModel && baseApiOutput === baseModelOutput) {
         baseModelOutput = path.join(baseModelOutput, 'model');
       }
-      await writeModelToFile(genModels, { base: baseModelOutput, asGlobalModel: config.asGlobalModel });
+      await writeModelToFile(genModels, { base: baseModelOutput });
       modelCount += genModels.length;
     }
   }

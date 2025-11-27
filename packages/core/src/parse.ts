@@ -81,7 +81,7 @@ export function parseRefKey(refKey: string) {
  * @param typeMapping
  * @returns
  */
-function parseBase(property: string, typeMapping?: Record<string, string>) {
+function parseBase(property?: string, typeMapping?: Record<string, string>) {
   const mergedTypeMapping = {
     string: 'string',
     integer: 'number',
@@ -95,7 +95,9 @@ function parseBase(property: string, typeMapping?: Record<string, string>) {
     ...typeMapping,
   };
 
-  return mergedTypeMapping[property as keyof typeof typeMapping] || 'any';
+  return property?.replace?.(/[^<>\[\]]+/g, (match) => {
+    return mergedTypeMapping[match as keyof typeof typeMapping] || match;
+  }) || 'any';
 }
 
 /**
@@ -119,7 +121,7 @@ export function parseProperty(property?: string | SchemaObject | ReferenceObject
       const { typeName, fileName } = parseRefKey(ref);
       tsFileName = fileName;
       const parseType = parseBase(typeName, typeMapping);
-      return isBaseType(parseType) && parseType !== 'any' ? parseType : typeName;
+      return parseType;
     }
 
     // 数组类型

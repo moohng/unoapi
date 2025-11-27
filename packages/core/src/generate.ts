@@ -147,8 +147,6 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     }
   }
 
-  apiRefs = apiRefs.filter((item) => isAllowGenerate(item, options?.ignores));
-
   // 构建 API 上下文
   let apiContext: ApiContext = {
     api: parsedApi,
@@ -258,10 +256,8 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
   }
 
   for (const ref of allRefsSet) {
-    if (isAllowGenerate(ref, options?.ignores)) {
-      generateCode(ref);
-    }
+    generateCode(ref);
   }
 
-  return allContextList;
+  return allContextList.filter((item) => isAllowGenerate(item.fileName, options?.ignores));
 }

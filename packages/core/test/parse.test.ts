@@ -55,12 +55,13 @@ describe('parseProperty', () => {
     { property: 'boolean', tsType: 'boolean', refs: [] },
     { property: 'int', tsType: 'number', refs: [] },
     { property: 'object', tsType: 'object', refs: [] },
-    { property: 'unknown', tsType: 'any', refs: [] },
-    { property: 'ABBSBSB', tsType: 'any', refs: [] },
+    { property: 'unknown', tsType: 'unknown', refs: [] },
+    { property: 'ABBSBSB', tsType: 'ABBSBSB', refs: [] },
     { property: { type: 'long' }, tsType: 'number', refs: [] },
     { property: { type: 'array', items: { $ref: '#/components/schemas/com.example.dto.UserDTO' } }, tsType: 'UserDTO[]', refs: ['#/components/schemas/com.example.dto.UserDTO'], tsFileName: 'UserDTO' },
     { property: { $ref: '#/components/schemas/com.example.dto.UserDTO' }, tsType: 'UserDTO', refs: ['#/components/schemas/com.example.dto.UserDTO'], tsFileName: 'UserDTO' },
     { property: { $ref: '#/components/schemas/Response«List«User对象»»' }, tsType: 'Response<User[]>', refs: ['#/components/schemas/Response«List«User对象»»'], tsFileName: 'Response' },
+    { property: { $ref: '#/components/schemas/Response«List«int»»' }, tsType: 'Response<number[]>', refs: ['#/components/schemas/Response«List«int»»'], tsFileName: 'Response' },
   ];
   for (const testCase of testCases) {
     it(`测试：${typeof testCase.property === 'string' ? testCase.property : JSON.stringify(testCase.property)}`, () => {

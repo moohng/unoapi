@@ -9,11 +9,12 @@ import {
   loadDoc,
   downloadDoc,
   filterApi,
-  writeApiFile,
+  writeApiToFile,
   writeModelToFile,
   ApiOperationObject,
   GenerateApi,
   OpenAPIObject,
+  ImportItem,
 } from '@unoapi/core';
 import { createLogger } from '../utils/logger.js';
 
@@ -37,7 +38,6 @@ export function registerApiCommand(program: Command) {
     .option('-o, --output <output>', '输出目录，默认 src/api')
     .option('--func <funcName>', '自定义 API 函数名称')
     .option('--only-model', '只生成 model 代码')
-    .option('--global-model', '生成 model 类型在全局声明')
     .option('--all', '生成所有接口的代码')
     .action(async (urls: (string | ApiOperationObject)[], options: CliApiOptions) => {
       const config = await loadConfig();
@@ -133,11 +133,7 @@ export function registerApiCommand(program: Command) {
         for (const genApi of genApis) {
           const baseApiOutput = options.output || config.output;
           const onlyModel = options.onlyModel ?? config.onlyModel;
-          if (!onlyModel) {
-            await writeApiFile(genApi, { base: baseApiOutput, imports: config.imports });
-            consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
-            apiCount++;
-          }
+          let modelImport: ImportItem | undefined;
 
           if (doc.components?.schemas) {
             const genModels = genApi.getModels(doc.components.schemas);
@@ -149,9 +145,8 @@ export function registerApiCommand(program: Command) {
               baseModelOutput = path.join(baseModelOutput, genApi.fileDir);
             }
 
-            await writeModelToFile(genModels, {
+            const { indexFilePath, fileNames } = await writeModelToFile(genModels, {
               base: baseModelOutput,
-              asGlobalModel: options.globalModel ?? config.asGlobalModel,
             });
 
             modelCount += genModels.length;
@@ -159,6 +154,30 @@ export function registerApiCommand(program: Command) {
             genModels.forEach(m => {
               consola.success('生成 model：', path.join(baseModelOutput, m.filePath));
             });
+
+            let relativePath = path.relative(path.join(baseApiOutput, genApi.fileDir), path.dirname(indexFilePath));
+            if (!relativePath.startsWith('.')) {
+              relativePath = `./${relativePath}`;
+            } else {
+              relativePath = relativePath.replace(/\\/g, '/');
+            }
+            if (fileNames.length) {
+              modelImport = { path: relativePath, names: fileNames.filter(name => genApi.sourceCode.includes(name)), onlyType: true };
+            }
+          }
+
+          // 写入 api 文件
+          if (!onlyModel) {
+            const imports: (string | ImportItem)[] = config.imports ? [...config.imports] : [];
+
+            // 计算 model 导入路径
+            if (modelImport) {
+              imports.push(modelImport);
+            }
+
+            await writeApiToFile(genApi, { base: baseApiOutput, imports });
+            consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
+            apiCount++;
           }
         }
 

@@ -69,7 +69,6 @@ main();
 | `funcTpl` | `(context) => string` | - | 自定义 API 函数生成模板 |
 | `imports` | `string \| string[]` | - | API 文件头部的导入语句 |
 | `onlyModel` | `boolean` | `false` | 是否只生成 Model 类型 |
-| `asGlobalModel` | `boolean` | `false` | 是否生成全局命名空间的类型 |
 
 ## 🔗 相关链接
 

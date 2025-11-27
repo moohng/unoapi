@@ -37,10 +37,6 @@ export interface UnoUserConfig {
    */
   onlyModel?: boolean;
   /**
-   * 是否将 model 类型写入全局
-   */
-  asGlobalModel?: boolean;
-  /**
    * api 函数的头部导入代码
    */
   imports?: string | string[];
@@ -140,7 +136,6 @@ export default defineUnoConfig({
   // },
 
   // onlyModel: false,
-  // asGlobalModel: false,
   // imports: ['import request from \'@utils/request\';'],
   // ignores: ['ResponseDTO'],
 });

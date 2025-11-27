@@ -116,7 +116,7 @@ describe('config 模块测试', () => {
     });
 
     it('测试：从 package.json 加载', async () => {
-      const mockConfig = { unoapi: { openapiUrl: 'url', output: 'out', onlyModel: true, asGlobalModel: true } };
+      const mockConfig = { unoapi: { openapiUrl: 'url', output: 'out', onlyModel: true } };
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockConfig));
 
       const config = await loadConfig();
@@ -125,7 +125,6 @@ describe('config 模块测试', () => {
       expect(config.modelOutput).toBe(path.join(cwd, 'out'));
       expect(config.cacheFile).toBe(path.join(cwd, 'out/.openapi-cache.json'));
       expect(config.onlyModel).toBe(true);
-      expect(config.asGlobalModel).toBe(true);
     });
   });
 });

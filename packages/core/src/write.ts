@@ -3,12 +3,15 @@ import * as fs from 'fs/promises';
 import { existsPath } from './tools.js';
 import { transformTypeIndexCode } from './transform.js';
 import type { ImportTypeItem, GenerateApi, GenerateModel } from './types.js';
+import { ImportItem, mergeImports, parseImports } from './import.js';
 
 interface WriteApiOptions {
   /** base 目录 */
   base: string;
+  /** 覆盖默认写入 文件路径 */
+  filePath?: string;
   /** import 头部导入 */
-  imports?: string[];
+  imports?: (string | ImportItem)[];
 }
 
 /**
@@ -16,16 +19,39 @@ interface WriteApiOptions {
  * @param api 
  * @param options 
  */
-export async function writeApiFile(api: GenerateApi, options: WriteApiOptions) {
+export async function writeApiToFile(api: GenerateApi, options: WriteApiOptions) {
   // console.log('写入 api 代码到：', api.filePath);
-  const filePath = path.resolve(options.base, api.filePath);
-  await appendToFile(filePath, api.sourceCode, options.imports);
+  const filePath = options.filePath ? path.resolve(options.filePath) : path.resolve(options.base, api.filePath);
+  let content = api.sourceCode;
+  const imports = options.imports;
+
+  // 创建输出文件
+  const exists = await existsPath(filePath);
+  if (!exists) {
+    const importStr = mergeImports(imports || []);
+    if (importStr) {
+      content = importStr + '\n\n' + content + '\n';
+    }
+    return writeToFile(filePath, content);
+  }
+
+  // 读取现有内容
+  let fileContent = await fs.readFile(filePath, 'utf-8');
+
+  // 合并 import
+  if (imports?.length) {
+    const { parsedImports, otherLines } = parseImports(fileContent);
+    fileContent = mergeImports(parsedImports, imports);
+    fileContent += '\n' + otherLines.join('\n');
+  }
+
+  // 写入内容
+  return writeToFile(filePath, fileContent + '\n' + content + '\n');
 }
 
 interface WriteModelOptions {
   /** base 目录 */
   base: string;
-  asGlobalModel?: boolean;
 }
 
 /**
@@ -35,17 +61,24 @@ interface WriteModelOptions {
  */
 export async function writeModelToFile(models: GenerateModel[], options: WriteModelOptions) {
   const filePaths: string[] = [];
+
   for (const model of models) {
     const filePath = path.resolve(options.base, model.fileFullName);
     // console.log('写入 model 代码到：', filePath);
     await writeToFile(filePath, model.sourceCode);
     filePaths.push(filePath);
   }
-  await writeModelToIndexFile(models.map((model, index) => ({
+
+  const indexFilePath = await writeModelToIndexFile(models.map((model, index) => ({
     fileName: model.fileName,
     filePath: filePaths[index],
     genericParams: model.genericParams,
-  })), { outDir: path.resolve(options.base), asGlobal: options.asGlobalModel });
+  })), { outDir: path.resolve(options.base) });
+
+  return {
+    indexFilePath,
+    fileNames: models.map(m => m.fileName),
+  };
 }
 
 /**
@@ -64,27 +97,6 @@ export async function writeToFile(filePath: string, content: string) {
   return fs.writeFile(filePath, content, 'utf8');
 }
 
-/**
- * 追加内容到文件
- * @param filePath
- * @param content
- * @returns
- */
-export async function appendToFile(filePath: string, content: string, imports?: string[]) {
-  // 创建输出文件
-  const exists = await existsPath(filePath);
-  if (!exists) {
-    const importStr = imports?.join('\n');
-    if (importStr) {
-      content = importStr + '\n' + content;
-    }
-    return writeToFile(filePath, content);
-  }
-
-  // 追加内容
-  return fs.appendFile(filePath, content, 'utf8');
-}
-
 interface ModelItem {
   fileName: string;
   filePath?: string;
@@ -93,7 +105,6 @@ interface ModelItem {
 
 interface WriteModelToIndexFileOptions {
   outDir: string;
-  asGlobal?: boolean;
 }
 
 /**
@@ -122,23 +133,12 @@ export async function writeModelToIndexFile(items: ModelItem[], options: WriteMo
     const oldImports: ImportTypeItem[] = [];
     for (const m of matched) {
       const item: ImportTypeItem = { fileName: m[1], path: m[2] };
-      if (options.asGlobal) {
-        // 检测类型是否有泛型参数
-        const typeFilePath = path.join(path.dirname(modelFilePath), m[1] + '.ts');
-        try {
-          const typeContent = await fs.readFile(typeFilePath, 'utf-8');
-          const matched = typeContent.match(new RegExp(`interface ${m[1]}<(.+)>`));
-          item.genericParams = matched?.[1].split(',');
-        } catch {
-          throw new Error(`未找到类型文件：${typeFilePath}`);
-        }
-      }
       oldImports.push(item);
     }
     imports.push(...oldImports);
   }
 
-  const code = transformTypeIndexCode(imports, options.asGlobal);
+  const code = transformTypeIndexCode(imports);
   await fs.writeFile(modelFilePath, code, 'utf-8');
 
   return modelFilePath;

@@ -92,7 +92,6 @@ export default defineUnoConfig({
 | `cacheFile` | `string` | `.openapi-cache.json` | 缓存文件路径 |
 | `typeMapping` | `Record<string, string>` | - | 自定义类型映射 |
 | `funcTpl` | `Function` | - | 自定义函数模板 |
-| `asGlobalModel` | `boolean` | `false` | 是否生成全局类型 |
 | `imports` | `string \| string[]` | - | API 文件头部导入代码 |
 
 ## 🎨 使用场景

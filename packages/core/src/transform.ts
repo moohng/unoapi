@@ -164,25 +164,21 @@ export function transformApiCode(apiContext: ApiContext, typeMapping?: Record<st
 
   const resStr = responseType ? `<${responseType}>` : '';
 
-  let apiFuncStr = `
-export function ${name}(${paramStr}) {
+  let apiFuncStr = `export function ${name}(${paramStr}) {
   return request${resStr}({ url: ${urlStr},${bodyType || queryType ? ' data,' : ''} method: '${method.toUpperCase()}' });
-}
-`;
+}`;
 
   if (comment) {
-    apiFuncStr =
-      `
-/**
+    apiFuncStr = `/**
  * ${comment}
  * @UNOAPI[${method}:${url}]
- */` + apiFuncStr;
+ */
+` + apiFuncStr;
   } else {
-    apiFuncStr =
-      `
-/**
+    apiFuncStr = `/**
  * @UNOAPI[${method}:${url}]
- */` + apiFuncStr;
+ */
+` + apiFuncStr;
   }
 
   return apiFuncStr;
@@ -193,22 +189,16 @@ export function ${name}(${paramStr}) {
  * @param imports
  * @returns
  */
-export function transformTypeIndexCode(imports: ImportTypeItem[], asGlobal = false) {
+export function transformTypeIndexCode(imports: ImportTypeItem[]) {
   let importStr = '';
-  let typeStr = asGlobal ? 'declare global {\n' : 'export {\n';
+  let typeStr = 'export {\n';
   const uniqueMap: Record<string, boolean> = {};
   for (const item of imports) {
     if (uniqueMap[item.fileName]) {
       continue;
     }
-    if (asGlobal) {
-      importStr += `import _${item.fileName} from '${item.path}';\n`;
-      const genericStr = item.genericParams?.length ? `<${item.genericParams.join(', ')}>` : '';
-      typeStr += `  type ${item.fileName}${genericStr} = _${item.fileName}${genericStr};\n`;
-    } else {
-      importStr += `import ${item.fileName} from '${item.path}';\n`;
-      typeStr += `  ${item.fileName},\n`;
-    }
+    importStr += `import ${item.fileName} from '${item.path}';\n`;
+    typeStr += `  ${item.fileName},\n`;
     uniqueMap[item.fileName] = true;
   }
   typeStr += '}\n';
