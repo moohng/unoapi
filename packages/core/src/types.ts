@@ -35,13 +35,15 @@ export interface ApiContext {
 }
 
 /**
- * 导入类型项
+ * 导入项
  */
-export interface ImportTypeItem {
-  fileName: string;
-  genericParams?: string[];
+export type ImportItem = {
   path: string;
-}
+  defaultName?: string;
+  names?: string[];
+  asName?: string;
+  onlyType?: boolean;
+} | string;
 
 /**
  * 生成的代码基础接口
@@ -64,8 +66,6 @@ export interface GenerateCode {
 export interface GenerateModel extends GenerateCode {
   /** 类型名称 */
   typeName: string;
-  /** 泛型参数 */
-  genericParams?: string[];
 }
 
 /**

@@ -1,9 +1,6 @@
 import { SchemaObject } from 'openapi3-ts/oas30';
 import { parseRefKey, parseProperty } from './parse.js';
-import type { HTTPMethod, ApiContext, TypeFieldOption, ApiOperationObject, ImportTypeItem } from './types.js';
-
-// Re-export types for backward compatibility
-export type { HTTPMethod, ApiContext, TypeFieldOption, ApiOperationObject, ImportTypeItem };
+import type { ApiContext, ImportItem, TypeFieldOption } from './types.js';
 
 /**
  * 生成类型字段代码
@@ -189,17 +186,19 @@ export function transformApiCode(apiContext: ApiContext, typeMapping?: Record<st
  * @param imports
  * @returns
  */
-export function transformTypeIndexCode(imports: ImportTypeItem[]) {
+export function transformTypeIndexCode(imports: ImportItem[]) {
   let importStr = '';
   let typeStr = 'export {\n';
   const uniqueMap: Record<string, boolean> = {};
   for (const item of imports) {
-    if (uniqueMap[item.fileName]) {
-      continue;
+    if (typeof item !== 'string') {
+      if (uniqueMap[item.defaultName!]) {
+        continue;
+      }
+      importStr += `import ${item.defaultName!} from '${item.path}';\n`;
+      typeStr += `  ${item.defaultName!},\n`;
+      uniqueMap[item.defaultName!] = true;
     }
-    importStr += `import ${item.fileName} from '${item.path}';\n`;
-    typeStr += `  ${item.fileName},\n`;
-    uniqueMap[item.fileName] = true;
   }
   typeStr += '}\n';
 

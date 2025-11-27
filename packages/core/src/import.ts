@@ -1,9 +1,10 @@
-export interface ImportItem {
-  path: string;
-  names: string[];
-  onlyType?: boolean;
-}
+import { ImportItem } from "./types";
 
+/**
+ * 解析导入语句
+ * @param code
+ * @returns
+ */
 export function parseImports(code: string) {
   const lines = code.split('\n');
   const importLines: string[] = [];
@@ -38,8 +39,8 @@ export function parseImports(code: string) {
         parsedImports.push(item);
       } else {
         const item = imports.get(path);
-        if (item) {
-          item.names.push(...names);
+        if (item && typeof item !== 'string') {
+          item.names = [...(item.names || []), ...names];
         }
       }
     } else {
@@ -58,15 +59,15 @@ export function parseImports(code: string) {
  * @param existingImports 原始 import 语句数组
  * @param newImports 新的 import 语句数组
  */
-export function mergeImports(existingImports: (string | ImportItem)[], newImports?: (string | ImportItem)[]) {
+export function mergeImports(existingImports: ImportItem[], newImports?: ImportItem[]) {
   // 重建 import 块
   const mergedImportLines: string[] = [];
 
   for (const importItem of newImports || []) {
     if (typeof importItem !== 'string') {
-      const hasExist = existingImports.find(item => (item as ImportItem).path === importItem.path);
-      if (hasExist) {
-        (hasExist as ImportItem).names.push(...importItem.names);
+      const hasExist = existingImports.find(item => typeof item !== 'string' && item.path === importItem.path);
+      if (hasExist && typeof hasExist !== 'string') {
+        hasExist.names = [...(hasExist.names || []), ...(importItem.names || [])];
       } else {
         existingImports.push(importItem);
       }

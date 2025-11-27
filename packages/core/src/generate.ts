@@ -57,7 +57,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
   }
 
   // 函数名称
-  const defaultFuncName = parsedApi.operationId?.split(/[\s-_]/).pop();
+  const defaultFuncName = parsedApi.operationId;
   if (options?.funcName) {
     funcName = options.funcName;
   } else if (defaultFuncName) {
@@ -251,7 +251,6 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
       fileFullName,
       fileDir: '',
       filePath: '',
-      genericParams: generics,
     });
   }
 

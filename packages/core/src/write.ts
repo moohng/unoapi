@@ -2,8 +2,8 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { existsPath } from './tools.js';
 import { transformTypeIndexCode } from './transform.js';
-import type { ImportTypeItem, GenerateApi, GenerateModel } from './types.js';
-import { ImportItem, mergeImports, parseImports } from './import.js';
+import type { ImportItem, GenerateApi, GenerateModel } from './types.js';
+import { mergeImports, parseImports } from './import.js';
 
 interface WriteApiOptions {
   /** base 目录 */
@@ -72,7 +72,6 @@ export async function writeModelToFile(models: GenerateModel[], options: WriteMo
   const indexFilePath = await writeModelToIndexFile(models.map((model, index) => ({
     fileName: model.fileName,
     filePath: filePaths[index],
-    genericParams: model.genericParams,
   })), { outDir: path.resolve(options.base) });
 
   return {
@@ -100,7 +99,6 @@ export async function writeToFile(filePath: string, content: string) {
 interface ModelItem {
   fileName: string;
   filePath?: string;
-  genericParams?: string[];
 }
 
 interface WriteModelToIndexFileOptions {
@@ -113,7 +111,7 @@ interface WriteModelToIndexFileOptions {
  * @returns
  */
 export async function writeModelToIndexFile(items: ModelItem[], options: WriteModelToIndexFileOptions) {
-  const imports: ImportTypeItem[] = items.map(option => {
+  const imports: ImportItem[] = items.map(option => {
     const { fileName, filePath } = option;
     let relativePath = filePath ? path.relative(options.outDir, path.dirname(filePath)) : `.`;
     if (!relativePath.startsWith('.')) {
@@ -121,7 +119,7 @@ export async function writeModelToIndexFile(items: ModelItem[], options: WriteMo
     }
 
     const importPath = `${relativePath}/${fileName}`;
-    return { fileName, path: importPath, genericParams: option.genericParams };
+    return { defaultName: fileName, path: importPath };
   });
 
   const modelFilePath = path.join(options.outDir, 'index.ts');
@@ -129,13 +127,8 @@ export async function writeModelToIndexFile(items: ModelItem[], options: WriteMo
     await fs.mkdir(path.dirname(modelFilePath), { recursive: true });
   } else {
     const modelFileContent = await fs.readFile(modelFilePath, 'utf-8');
-    const matched = modelFileContent.matchAll(/import\s_?(.+)\sfrom\s['"](.+)['"]/g);
-    const oldImports: ImportTypeItem[] = [];
-    for (const m of matched) {
-      const item: ImportTypeItem = { fileName: m[1], path: m[2] };
-      oldImports.push(item);
-    }
-    imports.push(...oldImports);
+    const { parsedImports } = parseImports(modelFileContent);
+    imports.push(...parsedImports);
   }
 
   const code = transformTypeIndexCode(imports);
