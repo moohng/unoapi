@@ -256,8 +256,8 @@ export async function existsConfig(type: UnoConfigType) {
   const configPath = getConfigFile(type);
   if (type === UnoConfigType.PACKAGE) {
     try {
-      delete require.cache[require.resolve(configPath)];
-      const packageJson = require(configPath);
+      const content = await fs.readFile(configPath, 'utf-8');
+      const packageJson = JSON.parse(content);
       return !!packageJson.unoapi;
     } catch {
       return false;

@@ -59,7 +59,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
   } else if (defaultFuncName) {
     funcName = defaultFuncName
   } else if (pathStrParams.length && pathStrParams.some((item) => isSimilar(item, funcName.match(/By(.+)/)?.[1]))) {
-    funcName = `${parsedApi.method.toUpperCase()}${upperFirst(funcName)}`;
+    funcName = `${parsedApi.method.toLowerCase()}${upperFirst(funcName)}`;
   }
 
   // path 参数
@@ -233,7 +233,7 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
     }
 
     // 拼接代码
-    const { code, refs } = transformModelCode(modelObj as SchemaObject, refKey, options?.typeMapping);
+    const { code, refs, generics } = transformModelCode(modelObj as SchemaObject, refKey, options?.typeMapping);
     for (const subRef of refs) {
       allRefsSet.add(subRef);
     }
@@ -246,6 +246,7 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
       fileFullName,
       fileDir: '',
       filePath: '',
+      genericParams: generics,
     });
   }
 

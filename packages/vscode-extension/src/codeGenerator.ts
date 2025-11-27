@@ -5,7 +5,7 @@ import {
   downloadDoc,
   generateCode,
   writeApiFile,
-  writeModelFile,
+  writeModelToFile,
   generateSingleApiCode,
   appendToFile,
   ApiOperationObject,
@@ -100,7 +100,7 @@ export async function generateApiCode(options: GenerateOptions): Promise<{ apiCo
       if (!onlyModel && baseApiOutput === baseModelOutput) {
         baseModelOutput = path.join(baseModelOutput, 'model');
       }
-      await writeModelFile(genModels, { base: baseModelOutput, asGlobalModel: config.asGlobalModel });
+      await writeModelToFile(genModels, { base: baseModelOutput, asGlobalModel: config.asGlobalModel });
       modelCount += genModels.length;
     }
   }

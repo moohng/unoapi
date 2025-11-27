@@ -10,7 +10,7 @@ import {
   downloadDoc,
   filterApi,
   writeApiFile,
-  writeModelFile,
+  writeModelToFile,
   ApiOperationObject,
   GenerateApi,
   OpenAPIObject,
@@ -126,25 +126,28 @@ export function registerApiCommand(program: Command) {
       }
 
       try {
+        let apiCount = 0;
         let modelCount = 0;
         for (const genApi of genApis) {
           const baseApiOutput = options.output || config.output;
-          if (!options.onlyModel) {
+          const onlyModel = options.onlyModel ?? config.onlyModel;
+          if (!onlyModel) {
             await writeApiFile(genApi, { base: baseApiOutput, imports: config.imports });
             consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
+            apiCount++;
           }
 
           if (doc.components?.schemas) {
             const genModels = genApi.getModels(doc.components.schemas);
 
             let baseModelOutput = options.output || config.modelOutput;
-            if (!options.onlyModel && baseApiOutput === baseModelOutput) {
+            if (!onlyModel && baseApiOutput === baseModelOutput) {
               baseModelOutput = path.join(baseModelOutput, genApi.fileDir, 'model');
             } else {
               baseModelOutput = path.join(baseModelOutput, genApi.fileDir);
             }
 
-            await writeModelFile(genModels, {
+            await writeModelToFile(genModels, {
               base: baseModelOutput,
               asGlobalModel: options.globalModel ?? config.asGlobalModel,
             });
@@ -157,7 +160,7 @@ export function registerApiCommand(program: Command) {
           }
         }
 
-        consola.success(`本次生成 api: ${genApis.length} 个， model: ${modelCount} 个`);
+        consola.success(`本次生成 api: ${apiCount} 个， model: ${modelCount} 个`);
       } catch (error) {
         consola.error(new Error('代码生成失败！'));
         consola.error(error);

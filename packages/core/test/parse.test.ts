@@ -31,6 +31,7 @@ describe('parseRefKey', () => {
     { refKey: 'com.example.dto.UserDTO', typeName: 'UserDTO', fileName: 'UserDTO' },
     { refKey: 'Response«com.example.dto.User»', typeName: 'Response<User>', fileName: 'Response' },
     { refKey: 'Response«List«User对象»»', typeName: 'Response<User[]>', fileName: 'Response' },
+    { refKey: 'com.zmn.common.dto2.ResponseDTO«com.zmn.common.dto2.PageResult«RecommendItemVO对象»»', typeName: 'ResponseDTO<PageResult<RecommendItemVO>>', fileName: 'ResponseDTO' },
   ];
 
   for (const testCase of testCases) {

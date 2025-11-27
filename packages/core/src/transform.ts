@@ -23,7 +23,7 @@ export function transformTypeFieldCode(obj: TypeFieldOption | string, typeMappin
   const minComment = minLength ? ` 最小长度：${minLength} ` : '';
   const maxComment = maxLength != null ? ` 最大长度：${maxLength} ` : '';
   if (descriptionComment || minComment || maxComment) {
-    const comment = `  /**${descriptionComment}${minComment}${maxComment}*/`;
+    const comment = `  /**\n   *${descriptionComment}${minComment}${maxComment}\n   */`;
     codeStr = `${comment}\n${codeStr}`;
   }
 
@@ -64,7 +64,7 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
 
   let codeStr = `export default interface ${fileName} {\n  // @UNOAPI[${refKey}]\n`;
   if (objDesc || title) {
-    codeStr = `/** ${objDesc || title} */\n${codeStr}`;
+    codeStr = `/**\n * ${objDesc || title}\n */\n${codeStr}`;
   }
 
   // 外部引用类型
@@ -77,6 +77,13 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
     // 定义属性
     const property = properties[propKey];
 
+    // 过滤掉一些非法字符 如：key[]、中文、非法字符等
+    const parsedKey = propKey.replace(/\W/g, '');
+    if (!parsedKey) {
+      console.warn('解析到非法字段名', propKey, fileName);
+      continue;
+    }
+
     let { tsType, refs: subRefs } = parseProperty(property, typeMapping);
     const isGeneric = typeName.includes(`<${tsType.replace('[]', '')}>`);
     for (const subRef of subRefs) {
@@ -88,21 +95,25 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
 
     // 处理泛型
     if (isGeneric) {
-      tsType = tsType.replace(/\w+/, GENERIC_TYPE_NAMES[++genericIndex]);
+      const isArray = tsType.endsWith('[]');
+      tsType = GENERIC_TYPE_NAMES[++genericIndex];
+      if (isArray) {
+        tsType += '[]';
+      }
     }
 
     const isRequired = required?.includes(propKey);
-    // 过滤掉一些非法字符 如：key[]
-    let propStr = `  ${propKey.replace(/\W/g, '')}${isRequired ? '' : '?'}: ${tsType};\n`;
+    let propStr = `  ${parsedKey}${isRequired ? '' : '?'}: ${tsType};\n`;
 
     // 添加注释
     const { description, minLength, maxLength } = property as SchemaObject;
     const descriptionComment = description ? ` ${description} ` : '';
     const minComment = minLength ? ` 最小长度：${minLength} ` : '';
     const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
-    if (descriptionComment || minComment || maxComment) {
-      const comment = `  /**${descriptionComment}${minComment}${maxComment}*/`;
-      propStr = `${comment}\n${propStr}`;
+    if (descriptionComment || minComment || maxComment || parsedKey !== propKey) {
+      const comment1 = `${descriptionComment}${minComment}${maxComment}`;
+      const commentStr = `  /**\n${comment1 ? `   *${comment1}\n` : ''}${parsedKey !== propKey ? `   * 原始字段名可能有误："${propKey}"\n` : ''}   */`;
+      propStr = `${commentStr}\n${propStr}`;
     }
 
     // 拼接属性
@@ -119,16 +130,16 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
   // 导入外部类型
   let importStr = '';
   for (const importRefKey of importRefKeys) {
-    const importType = parseRefKey(importRefKey);
+    const { fileName } = parseRefKey(importRefKey);
     if (refKey !== importRefKey) {
-      importStr = `${importStr}import ${importType} from './${importType}';\n`;
+      importStr = `${importStr}import ${fileName} from './${fileName}';\n`;
     }
   }
   if (importStr) {
     codeStr = `${importStr}\n${codeStr}`;
   }
 
-  return { code: codeStr, refs };
+  return { code: codeStr, refs, generics: GENERIC_TYPE_NAMES.slice(0, genericIndex + 1) };
 }
 
 /**
@@ -192,7 +203,8 @@ export function transformTypeIndexCode(imports: ImportTypeItem[], asGlobal = fal
     }
     if (asGlobal) {
       importStr += `import _${item.fileName} from '${item.path}';\n`;
-      typeStr += `  type ${item.fileName} = _${item.fileName};\n`;
+      const genericStr = item.genericParams?.length ? `<${item.genericParams.join(', ')}>` : '';
+      typeStr += `  type ${item.fileName}${genericStr} = _${item.fileName}${genericStr};\n`;
     } else {
       importStr += `import ${item.fileName} from '${item.path}';\n`;
       typeStr += `  ${item.fileName},\n`;

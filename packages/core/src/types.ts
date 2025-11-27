@@ -39,6 +39,7 @@ export interface ApiContext {
  */
 export interface ImportTypeItem {
   fileName: string;
+  genericParams?: string[];
   path: string;
 }
 
@@ -63,6 +64,8 @@ export interface GenerateCode {
 export interface GenerateModel extends GenerateCode {
   /** 类型名称 */
   typeName: string;
+  /** 泛型参数 */
+  genericParams?: string[];
 }
 
 /**

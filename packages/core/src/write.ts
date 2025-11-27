@@ -33,18 +33,19 @@ interface WriteModelOptions {
  * @param models 
  * @param options 
  */
-export async function writeModelFile(models: GenerateModel[], options: WriteModelOptions) {
+export async function writeModelToFile(models: GenerateModel[], options: WriteModelOptions) {
+  const filePaths: string[] = [];
   for (const model of models) {
     const filePath = path.resolve(options.base, model.fileFullName);
     // console.log('写入 model 代码到：', filePath);
     await writeToFile(filePath, model.sourceCode);
-    await writeToIndexFile({
-      fileName: model.fileName,
-      outDir: path.resolve(options.base),
-      filePath,
-      asGlobal: options.asGlobalModel,
-    });
+    filePaths.push(filePath);
   }
+  await writeModelToIndexFile(models.map((model, index) => ({
+    fileName: model.fileName,
+    filePath: filePaths[index],
+    genericParams: model.genericParams,
+  })), { outDir: path.resolve(options.base), asGlobal: options.asGlobalModel });
 }
 
 /**
@@ -84,43 +85,55 @@ export async function appendToFile(filePath: string, content: string, imports?: 
   return fs.appendFile(filePath, content, 'utf8');
 }
 
-interface ModelOptions {
+interface ModelItem {
   fileName: string;
-  outDir: string;
   filePath?: string;
+  genericParams?: string[];
+}
+
+interface WriteModelToIndexFileOptions {
+  outDir: string;
   asGlobal?: boolean;
 }
 
 /**
  * 写入到 index.ts
- * @param options
+ * @param items
  * @returns
  */
-export async function writeToIndexFile(options: ModelOptions) {
-  const { fileName, outDir, filePath } = options;
-  const modelFilePath = path.join(outDir, 'index.ts');
+export async function writeModelToIndexFile(items: ModelItem[], options: WriteModelToIndexFileOptions) {
+  const imports: ImportTypeItem[] = items.map(option => {
+    const { fileName, filePath } = option;
+    let relativePath = filePath ? path.relative(options.outDir, path.dirname(filePath)) : `.`;
+    if (!relativePath.startsWith('.')) {
+      relativePath = relativePath ? `./${relativePath}` : '.';
+    }
 
-  let relativePath = filePath ? path.relative(outDir, path.dirname(filePath)) : `.`;
-  if (!relativePath.startsWith('.')) {
-    relativePath = relativePath ? `./${relativePath}` : '.';
-  }
+    const importPath = `${relativePath}/${fileName}`;
+    return { fileName, path: importPath, genericParams: option.genericParams };
+  });
 
-  const importPath = `${relativePath}/${fileName}`;
-  const imports = [{ fileName, path: importPath }];
-
+  const modelFilePath = path.join(options.outDir, 'index.ts');
   if (!(await existsPath(modelFilePath))) {
     await fs.mkdir(path.dirname(modelFilePath), { recursive: true });
   } else {
     const modelFileContent = await fs.readFile(modelFilePath, 'utf-8');
-    // 如果已经存在，不需要重复写入
-    // if (new RegExp(`\\b${typeName}\\b`, 'g').test(modelFileContent)) {
-    //   return modelFilePath;
-    // }
-
     const matched = modelFileContent.matchAll(/import\s_?(.+)\sfrom\s['"](.+)['"]/g);
     const oldImports: ImportTypeItem[] = [];
     for (const m of matched) {
-      oldImports.push({ fileName: m[1], path: m[2] });
+      const item: ImportTypeItem = { fileName: m[1], path: m[2] };
+      if (options.asGlobal) {
+        // 检测类型是否有泛型参数
+        const typeFilePath = path.join(path.dirname(modelFilePath), m[1] + '.ts');
+        try {
+          const typeContent = await fs.readFile(typeFilePath, 'utf-8');
+          const matched = typeContent.match(new RegExp(`interface ${m[1]}<(.+)>`));
+          item.genericParams = matched?.[1].split(',');
+        } catch {
+          throw new Error(`未找到类型文件：${typeFilePath}`);
+        }
+      }
+      oldImports.push(item);
     }
     imports.push(...oldImports);
   }
