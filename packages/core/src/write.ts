@@ -35,13 +35,12 @@ interface WriteModelOptions {
  */
 export async function writeModelFile(models: GenerateModel[], options: WriteModelOptions) {
   for (const model of models) {
-    const modelDir = path.resolve(options.base, model.fileDir);
-    const filePath = path.resolve(modelDir, model.fileFullName);
+    const filePath = path.resolve(options.base, model.fileFullName);
     // console.log('写入 model 代码到：', filePath);
     await writeToFile(filePath, model.sourceCode);
     await writeToIndexFile({
-      typeName: model.typeName,
-      outDir: path.resolve(modelDir),
+      fileName: model.fileName,
+      outDir: path.resolve(options.base),
       filePath,
       asGlobal: options.asGlobalModel,
     });
@@ -86,7 +85,7 @@ export async function appendToFile(filePath: string, content: string, imports?: 
 }
 
 interface ModelOptions {
-  typeName: string;
+  fileName: string;
   outDir: string;
   filePath?: string;
   asGlobal?: boolean;
@@ -98,7 +97,7 @@ interface ModelOptions {
  * @returns
  */
 export async function writeToIndexFile(options: ModelOptions) {
-  const { typeName, outDir, filePath } = options;
+  const { fileName, outDir, filePath } = options;
   const modelFilePath = path.join(outDir, 'index.ts');
 
   let relativePath = filePath ? path.relative(outDir, path.dirname(filePath)) : `.`;
@@ -106,8 +105,8 @@ export async function writeToIndexFile(options: ModelOptions) {
     relativePath = relativePath ? `./${relativePath}` : '.';
   }
 
-  const importPath = `${relativePath}/${typeName}`;
-  const imports = [{ typeName, path: importPath }];
+  const importPath = `${relativePath}/${fileName}`;
+  const imports = [{ fileName, path: importPath }];
 
   if (!(await existsPath(modelFilePath))) {
     await fs.mkdir(path.dirname(modelFilePath), { recursive: true });
@@ -121,7 +120,7 @@ export async function writeToIndexFile(options: ModelOptions) {
     const matched = modelFileContent.matchAll(/import\s_?(.+)\sfrom\s['"](.+)['"]/g);
     const oldImports: ImportTypeItem[] = [];
     for (const m of matched) {
-      oldImports.push({ typeName: m[1], path: m[2] });
+      oldImports.push({ fileName: m[1], path: m[2] });
     }
     imports.push(...oldImports);
   }

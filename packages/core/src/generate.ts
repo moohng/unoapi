@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject } from 'openapi3-ts/oas30';
-import { parseSchemaObject, parseUrl } from './parse.js';
-import { formatObjName, upperFirst } from './tools.js';
+import { parseRefKey, parseProperty, parseUrl } from './parse.js';
+import { isSimilar, upperFirst } from './tools.js';
 import {
   transformQueryCode,
   transformApiCode,
@@ -54,7 +54,13 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
 
   // 函数名称
   const defaultFuncName = parsedApi.operationId?.split(/[\s-_]/).pop();
-  funcName = options?.funcName || defaultFuncName || funcName;
+  if (options?.funcName) {
+    funcName = options.funcName;
+  } else if (defaultFuncName) {
+    funcName = defaultFuncName
+  } else if (pathStrParams.length && pathStrParams.some((item) => isSimilar(item, funcName.match(/By(.+)/)?.[1]))) {
+    funcName = `${parsedApi.method.toUpperCase()}${upperFirst(funcName)}`;
+  }
 
   // path 参数
   const pathParams: TypeFieldOption[] = pathStrParams.map((name) => ({
@@ -76,8 +82,8 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     } else {
       schema = reqBody as ReferenceObject;
     }
-    const { type, refs } = parseSchemaObject(schema, options?.typeMapping);
-    bodyTypeName = type;
+    const { tsType, refs } = parseProperty(schema, options?.typeMapping);
+    bodyTypeName = tsType;
     apiRefs.push(...refs);
   }
 
@@ -128,8 +134,8 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
         const mediaType = Object.keys(resp.content)[0];
         const schema = resp.content[mediaType].schema;
         if (schema) {
-          const { type, refs } = parseSchemaObject(schema, options?.typeMapping);
-          responseTypeName = type;
+          const { tsType, refs } = parseProperty(schema, options?.typeMapping);
+          responseTypeName = tsType;
           apiRefs.push(...refs);
         }
       }
@@ -220,12 +226,9 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
     }
 
     // 对象名称
-    let objName = formatObjName(refKey);
-    if (objName.includes('<')) {
-      objName = objName.replace(/<.*>/g, ''); // 去掉泛型参数
-    }
+    let { typeName, fileName } = parseRefKey(refKey);
     const { properties } = modelObj as SchemaObject;
-    if (!objName || !properties || /^[a-z]/.test(objName)) {
+    if (!typeName || !properties || /^[a-z]/.test(typeName)) {
       return;
     }
 
@@ -235,11 +238,11 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: string[]
       allRefsSet.add(subRef);
     }
 
-    const fileFullName = `${objName}.ts`;
+    const fileFullName = `${fileName}.ts`;
     allContextList.push({
       sourceCode: code,
-      typeName: objName,
-      fileName: objName,
+      typeName,
+      fileName,
       fileFullName,
       fileDir: '',
       filePath: '',

@@ -1,6 +1,5 @@
 import { SchemaObject } from 'openapi3-ts/oas30';
-import { parseSchemaObject } from './parse.js';
-import { formatObjName } from './tools.js';
+import { parseRefKey, parseProperty } from './parse.js';
 import type { HTTPMethod, ApiContext, TypeFieldOption, ApiOperationObject, ImportTypeItem } from './types.js';
 
 // Re-export types for backward compatibility
@@ -15,7 +14,7 @@ export function transformTypeFieldCode(obj: TypeFieldOption | string, typeMappin
   if (typeof obj === 'string') {
     obj = { name: obj, required: true } as TypeFieldOption;
   }
-  const { type: tsType, refs } = parseSchemaObject(obj.schema, typeMapping);
+  const { tsType, refs } = parseProperty(obj.schema, typeMapping);
   let codeStr = `  ${obj.name.replace(/\W/g, '')}${obj.required ? '' : '?'}: ${tsType};`;
 
   const descriptionComment = obj.description ? ` ${obj.description} ` : '';
@@ -61,13 +60,9 @@ const GENERIC_TYPE_NAMES = ['T', 'E', 'U', 'K', 'V'];
 export function transformModelCode(modelObj: SchemaObject, refKey: string, typeMapping?: Record<string, string>) {
   const { required, properties, description: objDesc, title } = modelObj as SchemaObject;
 
-  const originalName = formatObjName(refKey); // 可能是 ResponseDTO<List<ProductBaseVO>>
-  let objName = originalName; 
-  if (objName.includes('<')) {
-    objName = objName.replace(/<.*>/g, ''); // 去掉泛型参数
-  }
+  const { typeName, fileName } = parseRefKey(refKey); // 可能是 ResponseDTO<List<ProductBaseVO>>
 
-  let codeStr = `export default interface ${objName} {\n  // @UNOAPI[${refKey}]\n`;
+  let codeStr = `export default interface ${fileName} {\n  // @UNOAPI[${refKey}]\n`;
   if (objDesc || title) {
     codeStr = `/** ${objDesc || title} */\n${codeStr}`;
   }
@@ -82,8 +77,8 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
     // 定义属性
     const property = properties[propKey];
 
-    let { type: tsType, refs: subRefs } = parseSchemaObject(property, typeMapping);
-    const isGeneric = originalName.includes(`<${tsType.replace('[]', '')}>`);
+    let { tsType, refs: subRefs } = parseProperty(property, typeMapping);
+    const isGeneric = typeName.includes(`<${tsType.replace('[]', '')}>`);
     for (const subRef of subRefs) {
       refs.push(subRef);
       if (!isGeneric) {
@@ -118,13 +113,13 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
 
   // 处理泛型参数
   if (genericIndex > -1) {
-    codeStr = codeStr.replace(`interface ${objName}`, `interface ${objName}<${GENERIC_TYPE_NAMES.slice(0, genericIndex + 1).join(', ')}>`);
+    codeStr = codeStr.replace(`interface ${fileName}`, `interface ${fileName}<${GENERIC_TYPE_NAMES.slice(0, genericIndex + 1).join(', ')}>`);
   }
 
   // 导入外部类型
   let importStr = '';
   for (const importRefKey of importRefKeys) {
-    const importType = formatObjName(importRefKey);
+    const importType = parseRefKey(importRefKey);
     if (refKey !== importRefKey) {
       importStr = `${importStr}import ${importType} from './${importType}';\n`;
     }
@@ -192,17 +187,17 @@ export function transformTypeIndexCode(imports: ImportTypeItem[], asGlobal = fal
   let typeStr = asGlobal ? 'declare global {\n' : 'export {\n';
   const uniqueMap: Record<string, boolean> = {};
   for (const item of imports) {
-    if (uniqueMap[item.typeName]) {
+    if (uniqueMap[item.fileName]) {
       continue;
     }
     if (asGlobal) {
-      importStr += `import _${item.typeName} from '${item.path}';\n`;
-      typeStr += `  type ${item.typeName} = _${item.typeName};\n`;
+      importStr += `import _${item.fileName} from '${item.path}';\n`;
+      typeStr += `  type ${item.fileName} = _${item.fileName};\n`;
     } else {
-      importStr += `import ${item.typeName} from '${item.path}';\n`;
-      typeStr += `  ${item.typeName},\n`;
+      importStr += `import ${item.fileName} from '${item.path}';\n`;
+      typeStr += `  ${item.fileName},\n`;
     }
-    uniqueMap[item.typeName] = true;
+    uniqueMap[item.fileName] = true;
   }
   typeStr += '}\n';
 

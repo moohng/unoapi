@@ -38,7 +38,7 @@ export interface ApiContext {
  * 导入类型项
  */
 export interface ImportTypeItem {
-  typeName: string;
+  fileName: string;
   path: string;
 }
 

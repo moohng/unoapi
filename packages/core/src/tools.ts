@@ -1,25 +1,6 @@
 import * as fs from 'fs/promises';
 
 /**
- * 去掉后端对象名中的非法字符
- * 比如：com.xxx.common.dto2.ResponseDTO«List«ActivityListVO对象»»     ======>     ResponseDTO<List<ActivityListVO>>
- * com.xxx.common.dto2.ResponseDTO«com.xxx.bff.crp.matter.common.dro.aftersales.order.SubmitAftersaleDRO»    ======>      ResponseDTO<SubmitAftersaleDRO>
- * @param objName
- * @param keepOuter
- */
-export function formatObjName(objName: string) {
-  // 去掉包名 com.xxx.common.dto2.  、非法字符
-  let name = objName
-    .replace(/[\w-]+(\.|\/)/g, '')
-    .replace(/«/g, '<')
-    .replace(/»/g, '>');
-  name = name.replace(/[^<>]+/g, (match) => {
-    return match.replace(/[^a-zA-Z0-9]/g, '') || match;
-  }).replace(/List<(.+)>/g, '$1[]');
-  return name;
-}
-
-/**
  * 是否是基本类型
  * @param type
  */
@@ -49,4 +30,14 @@ export async function existsPath(filePath: string) {
   } catch {
     return false;
   }
+}
+
+/**
+ * 判断两个字符串是否近似相等，忽略大小写
+ * @param str1
+ * @param str2
+ * @returns
+ */
+export function isSimilar(str1?: string, str2?: string) {
+  return str1?.toLocaleLowerCase() === str2?.toLocaleLowerCase();
 }

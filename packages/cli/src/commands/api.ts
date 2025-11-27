@@ -131,17 +131,19 @@ export function registerApiCommand(program: Command) {
           const baseApiOutput = options.output || config.output;
           if (!options.onlyModel) {
             await writeApiFile(genApi, { base: baseApiOutput, imports: config.imports });
+            consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
           }
-
-          consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
 
           if (doc.components?.schemas) {
             const genModels = genApi.getModels(doc.components.schemas);
 
             let baseModelOutput = options.output || config.modelOutput;
             if (!options.onlyModel && baseApiOutput === baseModelOutput) {
-              baseModelOutput = path.join(baseModelOutput, 'model');
+              baseModelOutput = path.join(baseModelOutput, genApi.fileDir, 'model');
+            } else {
+              baseModelOutput = path.join(baseModelOutput, genApi.fileDir);
             }
+
             await writeModelFile(genModels, {
               base: baseModelOutput,
               asGlobalModel: options.globalModel ?? config.asGlobalModel,
