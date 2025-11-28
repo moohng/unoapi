@@ -84,5 +84,5 @@ export function searchApi(doc: OpenAPIObject, keywords?: string) {
  */
 export function filterApi(doc: OpenAPIObject, urls: string[]) {
   const apis = searchApi(doc);
-  return apis.filter((item) => urls.includes(item.path));
+  return apis.filter((item) => urls.some(url => item.path === url.replace(/^\/?/, '/')));
 }

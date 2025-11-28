@@ -11,9 +11,20 @@ export function parseImports(code: string) {
   const otherLines: string[] = [];
 
   // 分离 import 和其他代码
+  let currentImport = '';
   for (const line of lines) {
-    if (line.trim().startsWith('import ')) {
-      importLines.push(line);
+    if (currentImport) {
+      currentImport += ' ' + line.trim();
+      if (currentImport.includes(' from ') || currentImport.includes(' from"')) {
+        importLines.push(currentImport);
+        currentImport = '';
+      }
+    } else if (line.trim().startsWith('import ')) {
+      if (line.includes(' from ') || line.includes(' from"') || line.trim().endsWith(';')) {
+        importLines.push(line);
+      } else {
+        currentImport = line;
+      }
     } else {
       otherLines.push(line);
     }

@@ -58,6 +58,17 @@ const a = 1;`,
       code: `import 'style.css';`,
       expectedImports: [`import 'style.css';`],
       expectedOtherLines: []
+    },
+    {
+      name: '解析换行导入',
+      code: `import {
+  useState,
+  useEffect
+} from 'react';`,
+      expectedImports: [
+        { path: 'react', names: ['useState', 'useEffect'], defaultName: undefined, onlyType: false }
+      ],
+      expectedOtherLines: []
     }
   ];
 

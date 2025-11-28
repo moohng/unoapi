@@ -105,6 +105,12 @@ export function registerApiCommand(program: Command) {
       consola.start('生成接口代码...');
 
       let genApis: GenerateApi[] = [];
+
+      if (!urls.length) {
+        consola.warn('未找到接口');
+        process.exit(0);
+      }
+
       if (urls.length === 1) {
         if (!options.func && !options.onlyModel) {
           // 让用户输入一个函数名称
