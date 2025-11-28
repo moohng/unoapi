@@ -7,7 +7,7 @@ import {
   transformApiCode,
   transformModelCode,
 } from './transform.js';
-import type { ApiOperationObject, TypeFieldOption, ApiContext, GenerateApi, GenerateModel, ModelSchemaCollection } from './types.js';
+import type { ApiOperationObject, TypeFieldOption, ApiContext, GenerateApi, GenerateModel, ModelSchemaCollection, ApiObjectRef } from './types.js';
 import { FuncTplCallback } from './config.js';
 
 // Re-export types for backward compatibility
@@ -73,7 +73,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     required: true,
   }));
 
-  let apiRefs: string[] = [];
+  let apiRefs: (string | ApiObjectRef)[] = [];
 
   // 入参
   let bodyTypeName: string | undefined;
@@ -87,8 +87,13 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
       schema = reqBody as ReferenceObject;
     }
     const { tsType, refs } = parseProperty(schema, options?.typeMapping);
-    bodyTypeName = getAllowTypeName(tsType, options?.ignores);
-    apiRefs.push(...refs);
+    if (tsType === 'object') {
+      bodyTypeName = `${upperFirst(fileNameWithoutExt)}${upperFirst(funcName)}Body`;
+      apiRefs.push({ schema: schema as SchemaObject, typeName: bodyTypeName });
+    } else {
+      bodyTypeName = getAllowTypeName(tsType, options?.ignores);
+      apiRefs.push(...refs);
+    }
   }
 
   const generateModelContextList: GenerateModel[] = [];
@@ -139,8 +144,13 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
         const schema = resp.content[mediaType].schema;
         if (schema) {
           const { tsType, refs } = parseProperty(schema, options?.typeMapping);
-          responseTypeName = getAllowTypeName(tsType, options?.ignores);
-          apiRefs.push(...refs);
+          if (tsType === 'object') {
+            responseTypeName = `${upperFirst(fileNameWithoutExt)}${upperFirst(funcName)}Response`;
+            apiRefs.push({ schema: schema as SchemaObject, typeName: responseTypeName });
+          } else {
+            responseTypeName = getAllowTypeName(tsType, options?.ignores);
+            apiRefs.push(...refs);
+          }
         }
       }
       break;
@@ -213,17 +223,23 @@ interface GenerateModelOptions {
  * @param options 选项
  * @returns
  */
-export function generateModelCode(schemas: ModelSchemaCollection, refs: string[], options?: GenerateModelOptions) {
-  const allRefsSet = new Set<string>(refs);
+export function generateModelCode(schemas: ModelSchemaCollection, refs: (string | ApiObjectRef)[], options?: GenerateModelOptions) {
+  const allRefsSet = new Set<string | ApiObjectRef>(refs);
   const allContextList: GenerateModel[] = [];
 
-  function generateCode(ref: string) {
-    let refKey = ref.replace('#/components/schemas/', '');
+  function generateCode(ref: string | ApiObjectRef) {
     let modelObj: SchemaObject | ReferenceObject | undefined;
-    modelObj = schemas[refKey];
-    if (!modelObj) {
-      console.error(`${refKey} 不存在！`);
-      return;
+    let refKey = '';
+    if (typeof ref === 'string') {
+      refKey = ref.replace('#/components/schemas/', '');
+      modelObj = schemas[refKey];
+      if (!modelObj) {
+        console.error(`${refKey} 不存在！`);
+        return;
+      }
+    } else {
+      refKey = ref.typeName;
+      modelObj = ref.schema;
     }
 
     if ((modelObj as ReferenceObject).$ref) {

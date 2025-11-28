@@ -37,6 +37,7 @@ export function parseUrl(input: string) {
         fileName = item;
       } else if (!dirName) {
         dirName = urlSplitArr.slice(0, i + 1).join('/');
+        dirName = dirName.replace(/.*https?:\/\/[^\/]+\//, '');
       }
     }
   }

@@ -19,6 +19,14 @@ export interface ApiOperationObject extends OperationObject {
 }
 
 /**
+ * api 引用
+ */
+export interface ApiObjectRef {
+  schema: SchemaObject;
+  typeName: string;
+}
+
+/**
  * Api 代码上下文
  */
 export interface ApiContext {
@@ -31,7 +39,7 @@ export interface ApiContext {
   queryType?: string;
   bodyType?: string;
   responseType?: string;
-  refs?: string[];
+  refs?: (string | ApiObjectRef)[];
 }
 
 /**

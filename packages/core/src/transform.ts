@@ -1,4 +1,4 @@
-import { SchemaObject } from 'openapi3-ts/oas30';
+import { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import { parseRefKey, parseProperty } from './parse.js';
 import type { ApiContext, ImportItem, TypeFieldOption } from './types.js';
 
@@ -69,54 +69,79 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
   const refs: string[] = [];
   let genericIndex = -1;
 
-  // 遍历属性
-  for (const propKey in properties) {
-    // 定义属性
-    const property = properties[propKey];
+  // 层级
+  let level = 0;
 
-    // 检测到非法字符
-    const canInvalid = /[^\w]/.test(propKey);
-    if (canInvalid) {
-      console.warn('解析到非法字段名', propKey, fileName);
-    }
+  // 遍历属性拼接
+  function joinPropertyCode(properties?: SchemaObject) {
+    level++;
+    const space = ' '.repeat(level * 2);
 
-    let { tsType, refs: subRefs } = parseProperty(property, typeMapping);
-    const isGeneric = typeName.includes(`<${tsType.replace('[]', '')}>`);
-    for (const subRef of subRefs) {
-      refs.push(subRef);
-      if (!isGeneric) {
-        importRefKeys.add(subRef.replace('#/components/schemas/', ''));
+    let codeStr = '';
+
+    for (const propKey of Object.keys(properties || {})) {
+      const property = properties?.[propKey as any] as SchemaObject;
+
+      // 检测到非法字符
+      const canInvalid = /[^\w]/.test(propKey);
+      if (canInvalid) {
+        console.warn('解析到非法字段名', propKey, fileName);
       }
-    }
 
-    // 处理泛型
-    if (isGeneric) {
-      const isArray = tsType.endsWith('[]');
-      tsType = GENERIC_TYPE_NAMES[++genericIndex];
-      if (isArray) {
-        tsType += '[]';
+      let { tsType, refs: subRefs } = parseProperty(property, typeMapping);
+
+      if (tsType === 'object') {
+        const code = joinPropertyCode(property.properties);
+        tsType = code ? `{
+${code}${space}}` : tsType;
+      } else if (tsType === 'object[]') {
+        const code = joinPropertyCode((property.items as SchemaObject)?.properties);
+        tsType = code ? `{
+${code}${space}}[]` : tsType;
+      } else {
+        const isGeneric = typeName.includes(`<${tsType.replace('[]', '')}>`);
+        for (const subRef of subRefs) {
+          refs.push(subRef);
+          if (!isGeneric) {
+            importRefKeys.add(subRef.replace('#/components/schemas/', ''));
+          }
+        }
+
+        // 处理泛型
+        if (isGeneric) {
+          const isArray = tsType.endsWith('[]');
+          tsType = GENERIC_TYPE_NAMES[++genericIndex];
+          if (isArray) {
+            tsType += '[]';
+          }
+        }
       }
+
+      const isRequired = required?.includes(propKey);
+      let propStr = `${space}${canInvalid ? `'${propKey}'` : propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
+
+      // 添加注释
+      const { description, minLength, maxLength } = property as SchemaObject;
+      const descriptionComment = description ? ` ${description} ` : '';
+      const minComment = minLength ? ` 最小长度：${minLength} ` : '';
+      const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
+      if (descriptionComment || minComment || maxComment || canInvalid) {
+        const comment1 = `${descriptionComment}${minComment}${maxComment}`;
+        const commentStr = `${space}/**\n${comment1 ? `${space} *${comment1}\n` : ''}${canInvalid ? `${space} * WARM: 字段名可能有误\n` : ''}${space} */`;
+        propStr = `${commentStr}\n${propStr}`;
+      }
+
+      // 拼接属性
+      codeStr += propStr;
     }
+    level--;
 
-    const isRequired = required?.includes(propKey);
-    let propStr = `  ${canInvalid ? `'${propKey}'` : propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
-
-    // 添加注释
-    const { description, minLength, maxLength } = property as SchemaObject;
-    const descriptionComment = description ? ` ${description} ` : '';
-    const minComment = minLength ? ` 最小长度：${minLength} ` : '';
-    const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
-    if (descriptionComment || minComment || maxComment || canInvalid) {
-      const comment1 = `${descriptionComment}${minComment}${maxComment}`;
-      const commentStr = `  /**\n${comment1 ? `   *${comment1}\n` : ''}${canInvalid ? `   * WARM: 字段名可能有误\n` : ''}   */`;
-      propStr = `${commentStr}\n${propStr}`;
-    }
-
-    // 拼接属性
-    codeStr += propStr;
+    return codeStr;
   }
 
-  codeStr += '}\n';
+  const propertyCode = joinPropertyCode(properties);
+
+  codeStr += propertyCode + '}\n';
 
   // 处理泛型参数
   if (genericIndex > -1) {

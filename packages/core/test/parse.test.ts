@@ -10,6 +10,7 @@ describe('parseUrl', () => {
     { url: '/api/user/:id', funcName: 'userById', fileName: 'user', dirName: 'api', pathStrParams: ['id'] },
     { url: '/api/user-info/get-data', funcName: 'getData', fileName: 'userInfo', dirName: 'api', pathStrParams: [] },
     { url: '/api/v1/user/{userId}/details', funcName: 'details', fileName: 'user', dirName: 'api/v1', pathStrParams: ['userId'] },
+    { url: '/POST https://oapi.dingtalk.com/topapi/asr/voice/translate', funcName: 'translate', fileName: 'voice', dirName: 'topapi/asr', pathStrParams: [] },
   ];
 
   for (const testCase of testCases) {
