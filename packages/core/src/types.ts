@@ -74,6 +74,8 @@ export interface GenerateModel extends GenerateCode {
 export interface GenerateApi extends GenerateCode {
   /** api 模型引用 */
   refs?: string[];
+  /** api 使用的模型 */
+  useModels?: string[];
   /** 生成模型 */
   getModels: (schemas: ModelSchemaCollection) => GenerateModel[];
 }

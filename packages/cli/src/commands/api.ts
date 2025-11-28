@@ -162,7 +162,7 @@ export function registerApiCommand(program: Command) {
               } else {
                 relativePath = relativePath.replace(/\\/g, '/');
               }
-              modelImport = { path: relativePath, names: fileNames.filter(name => genApi.sourceCode.includes(name)), onlyType: true };
+              modelImport = { path: relativePath, names: fileNames.filter(name => genApi.useModels?.includes(name)), onlyType: true };
             }
           }
 

@@ -185,6 +185,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     fileDir: dirName,
     filePath,
     refs: apiRefs,
+    useModels: [queryTypeName, bodyTypeName, responseTypeName].filter(Boolean),
     getModels: (schemas) => {
       const results = generateModelCode(schemas, apiRefs, { typeMapping: options?.typeMapping, ignores: options?.ignores });
       for (const codeContext of results || []) {
