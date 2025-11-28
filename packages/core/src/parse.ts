@@ -81,7 +81,7 @@ export function parseRefKey(refKey: string) {
  * @param typeMapping
  * @returns
  */
-function parseBase(property?: string, typeMapping?: Record<string, string>) {
+function parseBase(property?: string | string[], typeMapping?: Record<string, string>) {
   const mergedTypeMapping = {
     string: 'string',
     integer: 'number',
@@ -95,9 +95,17 @@ function parseBase(property?: string, typeMapping?: Record<string, string>) {
     ...typeMapping,
   };
 
-  return property?.replace?.(/[^<>\[\]]+/g, (match) => {
-    return mergedTypeMapping[match as keyof typeof typeMapping] || match;
-  }) || 'any';
+  if (typeof property === 'string') {
+    return property?.replace?.(/[^<>\[\]]+/g, (match) => {
+      return mergedTypeMapping[match as keyof typeof typeMapping] || match;
+    }) || 'any';
+  }
+
+  if (Array.isArray(property)) {
+    return mergedTypeMapping[property[0] as keyof typeof typeMapping] || 'any';
+  }
+
+  return 'any';
 }
 
 /**
@@ -121,11 +129,11 @@ export function parseProperty(property?: string | SchemaObject | ReferenceObject
       const { typeName, fileName } = parseRefKey(ref);
       tsFileName = fileName;
       const parseType = parseBase(typeName, typeMapping);
-      return parseType;
+      return parseType === 'any' ? typeName : parseType;
     }
 
     // 数组类型
-    if ((property as SchemaObject)?.type === 'array') {
+    if ((property as SchemaObject).items || (property as SchemaObject)?.type === 'array') {
       const subType = (property as SchemaObject).items ? parse((property as SchemaObject).items!) : 'any';
       return `${subType}[]`;
     }

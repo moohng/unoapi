@@ -74,11 +74,10 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
     // 定义属性
     const property = properties[propKey];
 
-    // 过滤掉一些非法字符 如：key[]、中文、非法字符等
-    const parsedKey = propKey.replace(/\W/g, '');
-    if (!parsedKey) {
+    // 检测到非法字符
+    const canInvalid = /[^\w]/.test(propKey);
+    if (canInvalid) {
       console.warn('解析到非法字段名', propKey, fileName);
-      continue;
     }
 
     let { tsType, refs: subRefs } = parseProperty(property, typeMapping);
@@ -100,16 +99,16 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
     }
 
     const isRequired = required?.includes(propKey);
-    let propStr = `  ${parsedKey}${isRequired ? '' : '?'}: ${tsType};\n`;
+    let propStr = `  ${canInvalid ? `'${propKey}'` : propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
 
     // 添加注释
     const { description, minLength, maxLength } = property as SchemaObject;
     const descriptionComment = description ? ` ${description} ` : '';
     const minComment = minLength ? ` 最小长度：${minLength} ` : '';
     const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
-    if (descriptionComment || minComment || maxComment || parsedKey !== propKey) {
+    if (descriptionComment || minComment || maxComment || canInvalid) {
       const comment1 = `${descriptionComment}${minComment}${maxComment}`;
-      const commentStr = `  /**\n${comment1 ? `   *${comment1}\n` : ''}${parsedKey !== propKey ? `   * 原始字段名可能有误："${propKey}"\n` : ''}   */`;
+      const commentStr = `  /**\n${comment1 ? `   *${comment1}\n` : ''}${canInvalid ? `   * WARM: 字段名可能有误\n` : ''}   */`;
       propStr = `${commentStr}\n${propStr}`;
     }
 

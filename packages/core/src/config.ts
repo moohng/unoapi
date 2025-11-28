@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 import Module from 'module';
 import { existsPath } from './tools.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
-import { ApiContext } from './transform.js';
+import { ApiContext } from './types.js';
 
 export type OpenApiInput = string | (() => Promise<OpenAPIObject> | OpenAPIObject);
 

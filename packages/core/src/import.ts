@@ -24,28 +24,68 @@ export function parseImports(code: string) {
   const imports = new Map<string, ImportItem>();
   const parsedImports: (string | ImportItem)[] = [];
 
-  // 简单的正则匹配 import { A, B } from 'path'
-  // 注意：这里只处理简单的命名导入，复杂的 default import 或 * as 需要更复杂的解析，但对于生成的代码通常足够
-  const importRegex = /import\s+(type)?\s*\{(.+)\}\s+from\s+['"](.+)['"]/;
 
   for (const line of importLines) {
-    const match = line.match(importRegex);
-    if (match) {
-      const names = match[2].split(',').map(s => s.trim());
-      const path = match[3];
+    // 1. 匹配 import A, type { A, B } from 'path'
+    const importRegex1 = /import\s+(.+,)?\s*(type)?\s*\{(.+)\}\s+from\s+['"](.+)['"]/;
+    const match1 = line.match(importRegex1);
+    if (match1) {
+      const name = match1[1]?.replace(',', '');
+      const names = match1[3].split(',').map(s => s.trim());
+      const path = match1[4];
       if (!imports.has(path)) {
-        const item: ImportItem = { path, names, onlyType: match[1] === 'type' };
+        const item: ImportItem = { path, names, defaultName: name, onlyType: match1[2] === 'type' };
         imports.set(path, item);
         parsedImports.push(item);
       } else {
         const item = imports.get(path);
         if (item && typeof item !== 'string') {
+          item.defaultName = name;
           item.names = [...(item.names || []), ...names];
         }
       }
-    } else {
-      parsedImports.push(line);
+      continue;
     }
+
+    // 2. 匹配 import type A from 'path'
+    const importRegex2 = /import\s+(type)?\s*(.+)\s+from\s+['"](.+)['"]/;
+    const match2 = line.match(importRegex2);
+    if (match2) {
+      const name = match2[2];
+      const path = match2[3];
+      if (!imports.has(path)) {
+        const item: ImportItem = { path, defaultName: name, onlyType: match2[1] === 'type' };
+        imports.set(path, item);
+        parsedImports.push(item);
+      } else {
+        const item = imports.get(path);
+        if (item && typeof item !== 'string') {
+          item.defaultName = name;
+        }
+      }
+      continue;
+    }
+
+    // 3. 匹配 import type * as A from 'path'
+    const importRegex3 = /import\s+(type)?\s*\*\s+as\s+(.+)\s+from\s+['"](.+)['"]/;
+    const match3 = line.match(importRegex3);
+    if (match3) {
+      const name = match3[2];
+      const path = match3[3];
+      if (!imports.has(path)) {
+        const item: ImportItem = { path, asName: name, onlyType: match3[1] === 'type' };
+        imports.set(path, item);
+        parsedImports.push(item);
+      } else {
+        const item = imports.get(path);
+        if (item && typeof item !== 'string') {
+          item.asName = name;
+        }
+      }
+      continue;
+    }
+
+    parsedImports.push(line);
   }
 
   return {
@@ -80,9 +120,13 @@ export function mergeImports(existingImports: ImportItem[], newImports?: ImportI
       if (!mergedImportLines.includes(item)) {
         mergedImportLines.push(item);
       }
-    } else {
+    } else if (item.names?.length) {
       const itemsStr = Array.from(new Set(item.names)).join(', ');
-      mergedImportLines.push(`import${item.onlyType ? ' type' : ''} { ${itemsStr} } from '${item.path}';`);
+      mergedImportLines.push(`import${item.defaultName ? ` ${item.defaultName},` : ''}${item.onlyType ? ' type' : ''} { ${itemsStr} } from '${item.path}';`);
+    } else if (item.asName) {
+      mergedImportLines.push(`import${item.onlyType ? ' type' : ''} * as ${item.asName} from '${item.path}';`);
+    } else if (item.defaultName) {
+      mergedImportLines.push(`import${item.onlyType ? ' type' : ''} ${item.defaultName} from '${item.path}';`);
     }
   });
 

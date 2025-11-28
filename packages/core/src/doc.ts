@@ -1,7 +1,7 @@
 import { OpenApiInput } from './config.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
-import { ApiOperationObject } from './transform.js';
 import { writeToFile } from './write.js';
+import { ApiOperationObject } from './types.js';
 
 /**
  * 更新 OpenAPI 文档

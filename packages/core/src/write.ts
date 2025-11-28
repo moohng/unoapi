@@ -111,6 +111,10 @@ interface WriteModelToIndexFileOptions {
  * @returns
  */
 export async function writeModelToIndexFile(items: ModelItem[], options: WriteModelToIndexFileOptions) {
+  if (!items.length) {
+    return;
+  }
+
   const imports: ImportItem[] = items.map(option => {
     const { fileName, filePath } = option;
     let relativePath = filePath ? path.relative(options.outDir, path.dirname(filePath)) : `.`;

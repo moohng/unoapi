@@ -155,13 +155,13 @@ export function registerApiCommand(program: Command) {
               consola.success('生成 model：', path.join(baseModelOutput, m.filePath));
             });
 
-            let relativePath = path.relative(path.join(baseApiOutput, genApi.fileDir), path.dirname(indexFilePath));
-            if (!relativePath.startsWith('.')) {
-              relativePath = `./${relativePath}`;
-            } else {
-              relativePath = relativePath.replace(/\\/g, '/');
-            }
             if (fileNames.length) {
+              let relativePath = path.relative(path.join(baseApiOutput, genApi.fileDir), path.dirname(indexFilePath));
+              if (!relativePath.startsWith('.')) {
+                relativePath = `./${relativePath}`;
+              } else {
+                relativePath = relativePath.replace(/\\/g, '/');
+              }
               modelImport = { path: relativePath, names: fileNames.filter(name => genApi.sourceCode.includes(name)), onlyType: true };
             }
           }
