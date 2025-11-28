@@ -27,7 +27,7 @@ export function parseImports(code: string) {
 
   for (const line of importLines) {
     // 1. 匹配 import A, type { A, B } from 'path'
-    const importRegex1 = /import\s+(.+,)?\s*(type)?\s*\{(.+)\}\s+from\s+['"](.+)['"]/;
+    const importRegex1 = /import\s+([\S]+,)?\s*(type)?\s*\{(.+)\}\s+from\s+['"](.+)['"]/;
     const match1 = line.match(importRegex1);
     if (match1) {
       const name = match1[1]?.replace(',', '');
@@ -48,7 +48,7 @@ export function parseImports(code: string) {
     }
 
     // 2. 匹配 import type A from 'path'
-    const importRegex2 = /import\s+(type)?\s*(.+)\s+from\s+['"](.+)['"]/;
+    const importRegex2 = /import\s+(type)?\s*([\S]+)\s+from\s+['"](.+)['"]/;
     const match2 = line.match(importRegex2);
     if (match2) {
       const name = match2[2];
@@ -67,7 +67,7 @@ export function parseImports(code: string) {
     }
 
     // 3. 匹配 import type * as A from 'path'
-    const importRegex3 = /import\s+(type)?\s*\*\s+as\s+(.+)\s+from\s+['"](.+)['"]/;
+    const importRegex3 = /import\s+(type)?\s*\*\s+as\s+([\S]+)\s+from\s+['"](.+)['"]/;
     const match3 = line.match(importRegex3);
     if (match3) {
       const name = match3[2];
