@@ -1,5 +1,11 @@
 # @unoapi/core
 
+## 2.1.1
+
+### Patch Changes
+
+- 341aa89: fixed some bugs
+
 ## 2.1.0
 
 ### Minor Changes
