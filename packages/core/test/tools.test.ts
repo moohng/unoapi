@@ -109,8 +109,8 @@ describe('getAllowTypeName', () => {
     { tsType: 'Res<User>', ignores: undefined, expected: 'Res<User>' },
     { tsType: 'User', ignores: ['User'], expected: '' },
     { tsType: 'User[]', ignores: ['User'], expected: '' },
-    { tsType: 'Res<User>', ignores: ['User'], expected: 'Res<User>' },
-    { tsType: 'Res<User[]>', ignores: ['Res', 'User'], expected: '' },
+    { tsType: '中文<User>', ignores: ['中文'], expected: 'User' },
+    { tsType: 'Res<中文[]>', ignores: ['Res', 'User'], expected: '中文[]' },
     { tsType: 'Res<User[]>', ignores: ['Res'], expected: 'User[]' },
   ];
 

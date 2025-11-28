@@ -58,15 +58,21 @@ export function parseUrl(input: string) {
  */
 export function parseRefKey(refKey: string) {
   // 去掉包名 com.xxx.common.dto2.  、非法字符
-  const name = refKey
+  let name = refKey
     .replace('#/components/schemas/', '')
     .replace(/[#\w-]+(\.|\/)/g, '')
     .replace(/«/g, '<')
     .replace(/»/g, '>')
     .replace(/[^<>]+/g, (match) => {
       return match.replace(/[^a-zA-Z0-9\[\]]/g, '') || match;
-    })
-    .replace(/List<(\w+)>/g, '$1[]');
+    });
+
+  // 替换 List 为 []
+  let prev = '';
+  while (name !== prev) {
+    prev = name;
+    name = name.replace(/List\s*<\s*([^<>]+|\<(?:[^<>]+|\g<0>)*\>)\s*>/g, (_, p1) => `${p1}[]`);
+  }
 
   const fileName = name
     .replace(/\[\]/g, '') // 去掉可能的 []

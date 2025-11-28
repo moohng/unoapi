@@ -69,7 +69,7 @@ export function isAllowGenerate(name?: string, ignores?: (string | RegExp)[]) {
  * @returns
  */
 export function getAllowTypeName(tsType: string, ignores?: (string | RegExp)[]): string {
-  const matched = tsType.match(/(\w+)<(.+)>/);
+  const matched = tsType.match(/([^<>\[\]]+)<(.+)>/) || tsType.match(/([^<>\[\]]+)\[\]/);
   let name;
   if (matched) {
     name = matched[1];
