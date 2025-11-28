@@ -1,5 +1,13 @@
 # @unoapi/cli
 
+## 2.1.1
+
+### Patch Changes
+
+- 341aa89: fixed some bugs
+- Updated dependencies [341aa89]
+  - @unoapi/core@2.1.1
+
 ## 2.1.0
 
 ### Minor Changes
