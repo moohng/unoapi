@@ -1,5 +1,11 @@
 # @unoapi/core
 
+## 2.1.0
+
+### Minor Changes
+
+- 3875699: 支持更多功能
+
 ## 2.0.4
 
 ### Patch Changes

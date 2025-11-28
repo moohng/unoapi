@@ -1,5 +1,16 @@
 # @unoapi/cli
 
+## 2.1.0
+
+### Minor Changes
+
+- 3875699: 支持更多功能
+
+### Patch Changes
+
+- Updated dependencies [3875699]
+  - @unoapi/core@2.1.0
+
 ## 2.0.4
 
 ### Patch Changes
