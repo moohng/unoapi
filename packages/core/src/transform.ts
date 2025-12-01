@@ -14,13 +14,16 @@ export function transformTypeFieldCode(obj: TypeFieldOption | string, typeMappin
   const { tsType, refs } = parseProperty(obj.schema, typeMapping);
   let codeStr = `  ${obj.name.replace(/\W/g, '')}${obj.required ? '' : '?'}: ${tsType};`;
 
-  const descriptionComment = obj.description ? ` ${obj.description} ` : '';
+  let descriptionComment = '';
+  if (obj.description) {
+    descriptionComment = obj.description.split('\n').filter(line => line.trim()).map((line) => `   * ${line}`).join('\n');
+  }
   const minLength = (obj.schema as SchemaObject)?.minLength;
   const maxLength = (obj.schema as SchemaObject)?.maxLength;
-  const minComment = minLength ? ` 最小长度：${minLength} ` : '';
-  const maxComment = maxLength != null ? ` 最大长度：${maxLength} ` : '';
+  const minComment = minLength ? `   * 最小长度：${minLength}` : '';
+  const maxComment = maxLength != null ? `   * 最大长度：${maxLength}` : '';
   if (descriptionComment || minComment || maxComment) {
-    const comment = `  /**\n   *${descriptionComment}${minComment}${maxComment}\n   */`;
+    const comment = `  /**\n${[descriptionComment, minComment, maxComment].filter(Boolean).join('\n')}\n   */`;
     codeStr = `${comment}\n${codeStr}`;
   }
 
@@ -55,7 +58,7 @@ const GENERIC_TYPE_NAMES = ['T', 'E', 'U', 'K', 'V'];
  * @returns 
  */
 export function transformModelCode(modelObj: SchemaObject, refKey: string, typeMapping?: Record<string, string>) {
-  const { required, properties, description: objDesc, title } = modelObj as SchemaObject;
+  const { description: objDesc, title } = modelObj;
 
   const { typeName, fileName } = parseRefKey(refKey); // 可能是 ResponseDTO<List<ProductBaseVO>>
 
@@ -73,14 +76,14 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
   let level = 0;
 
   // 遍历属性拼接
-  function joinPropertyCode(properties?: SchemaObject) {
+  function joinPropertyCode(schemaObj: SchemaObject) {
     level++;
     const space = ' '.repeat(level * 2);
 
     let codeStr = '';
 
-    for (const propKey of Object.keys(properties || {})) {
-      const property = properties?.[propKey as any] as SchemaObject;
+    for (const propKey of Object.keys(schemaObj.properties || {})) {
+      const property = schemaObj.properties?.[propKey];
 
       // 检测到非法字符
       const canInvalid = /[^\w]/.test(propKey);
@@ -91,11 +94,11 @@ export function transformModelCode(modelObj: SchemaObject, refKey: string, typeM
       let { tsType, refs: subRefs } = parseProperty(property, typeMapping);
 
       if (tsType === 'object') {
-        const code = joinPropertyCode(property.properties);
+        const code = joinPropertyCode(property as SchemaObject);
         tsType = code ? `{
 ${code}${space}}` : tsType;
       } else if (tsType === 'object[]') {
-        const code = joinPropertyCode((property.items as SchemaObject)?.properties);
+        const code = joinPropertyCode((property as SchemaObject).items as SchemaObject);
         tsType = code ? `{
 ${code}${space}}[]` : tsType;
       } else {
@@ -117,17 +120,20 @@ ${code}${space}}[]` : tsType;
         }
       }
 
-      const isRequired = required?.includes(propKey);
+      const isRequired = schemaObj?.required?.includes(propKey);
       let propStr = `${space}${canInvalid ? `'${propKey}'` : propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
 
       // 添加注释
       const { description, minLength, maxLength } = property as SchemaObject;
-      const descriptionComment = description ? ` ${description} ` : '';
-      const minComment = minLength ? ` 最小长度：${minLength} ` : '';
-      const maxComment = maxLength ? ` 最大长度：${maxLength} ` : '';
+      let descriptionComment = '';
+      if (description) {
+        descriptionComment = description.split('\n').filter(line => line.trim()).map((line) => `${space} * ${line}`).join('\n');
+      }
+      const minComment = minLength ? `${space} * 最小长度：${minLength}` : '';
+      const maxComment = maxLength ? `${space} * 最大长度：${maxLength}` : '';
       if (descriptionComment || minComment || maxComment || canInvalid) {
-        const comment1 = `${descriptionComment}${minComment}${maxComment}`;
-        const commentStr = `${space}/**\n${comment1 ? `${space} *${comment1}\n` : ''}${canInvalid ? `${space} * WARM: 字段名可能有误\n` : ''}${space} */`;
+        const commentLines = [descriptionComment, minComment, maxComment, canInvalid ? `${space} * WARM: 字段名可能有误` : ''].filter(Boolean);
+        const commentStr = `${space}/**\n${commentLines.join('\n')}\n${space} */`;
         propStr = `${commentStr}\n${propStr}`;
       }
 
@@ -139,7 +145,7 @@ ${code}${space}}[]` : tsType;
     return codeStr;
   }
 
-  const propertyCode = joinPropertyCode(properties);
+  const propertyCode = joinPropertyCode(modelObj);
 
   codeStr += propertyCode + '}\n';
 
@@ -174,10 +180,8 @@ export function transformApiCode(apiContext: ApiContext, typeMapping?: Record<st
   let paramStr = bodyType || queryType ? `data: ${bodyType || queryType}` : '';
   let urlStr = `'${url}'`;
   if (pathParams?.length) {
-    let codeStr = pathParams.map((item) => transformTypeFieldCode(item, typeMapping))
-      .map((item) => item.code.trim())
-      .join(' ');
-    paramStr = `params: { ${codeStr} }${paramStr ? ', ' + paramStr : ''}`;
+    let codeStr = pathParams.map((item) => transformTypeFieldCode(item, typeMapping).code).join('\n');
+    paramStr = `params: {\n${codeStr}\n}${paramStr ? ', ' + paramStr : ''}`;
     // 转换 url
     const paramUrl = url.replace(/\{(.*?)\}/g, (_, $1) => `\${params.${$1}}`);
     urlStr = `\`${paramUrl}\``;

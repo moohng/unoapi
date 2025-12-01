@@ -21,7 +21,7 @@ describe('transformTypeFieldCode', () => {
 
   it('测试：带描述的字段', () => {
     const input = { name: 'desc', required: true, schema: { type: 'string' }, description: '描述信息' };
-    const expected = { code: '  /**\n   * 描述信息 \n   */\n  desc: string;', refs: [] };
+    const expected = { code: '  /**\n   * 描述信息\n   */\n  desc: string;', refs: [] };
     const result = transformTypeFieldCode(input as any);
     expect(result.code).toBe(expected.code);
     expect(result.refs).toEqual(expected.refs);
@@ -29,7 +29,7 @@ describe('transformTypeFieldCode', () => {
 
   it('测试：带长度限制的字段', () => {
     const input = { name: 'code', required: true, schema: { type: 'string', minLength: 5, maxLength: 10 } };
-    const expected = { code: '  /**\n   * 最小长度：5  最大长度：10 \n   */\n  code: string;', refs: [] };
+    const expected = { code: '  /**\n   * 最小长度：5\n   * 最大长度：10\n   */\n  code: string;', refs: [] };
     const result = transformTypeFieldCode(input as any);
     expect(result.code).toBe(expected.code);
     expect(result.refs).toEqual(expected.refs);
@@ -166,7 +166,9 @@ export function createUser(data: UserDTO) {
     const expectedCode = `/**
  * @UNOAPI[get:/api/users/{id}]
  */
-export function getUserById(params: { id: number; }) {
+export function getUserById(params: {
+  id: number;
+}) {
   return request<User>({ url: \`/api/users/\${params.id}\`, method: 'GET' });
 }`;
     const result = transformApiCode(context as any);

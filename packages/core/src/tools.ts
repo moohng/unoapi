@@ -81,3 +81,16 @@ export function getAllowTypeName(tsType: string, ignores?: (string | RegExp)[]):
   }
   return matched?.[2] ? getAllowTypeName(matched?.[2], ignores) : '';
 };
+
+/**
+ * 判断路径是否是目录
+ * @param path
+ * @returns
+ */
+export async function isDirectory(path: string) {
+  try {
+    return (await fs.stat(path)).isDirectory();
+  } catch {
+    return path.endsWith('/') || !path.split('.')[1];
+  }
+}

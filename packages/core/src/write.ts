@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { existsPath } from './tools.js';
+import { existsPath, isDirectory } from './tools.js';
 import { transformTypeIndexCode } from './transform.js';
 import type { ImportItem, GenerateApi, GenerateModel } from './types.js';
 import { mergeImports, parseImports } from './import.js';
@@ -21,7 +21,7 @@ interface WriteApiOptions {
  */
 export async function writeApiToFile(api: GenerateApi, options: WriteApiOptions) {
   // console.log('写入 api 代码到：', api.filePath);
-  const filePath = options.filePath ? path.resolve(options.filePath) : path.resolve(options.base, api.filePath);
+  const filePath = path.resolve(await isDirectory(options.base) ? options.base : '', options.filePath || api.filePath);
   let content = api.sourceCode;
   const imports = options.imports;
 
@@ -89,6 +89,7 @@ export async function writeToFile(filePath: string, content: string) {
   // 创建输出文件
   const exists = await existsPath(path.dirname(filePath));
   if (!exists) {
+    console.log('创建目录：', filePath, path.dirname(filePath));
     await fs.mkdir(path.dirname(filePath), { recursive: true });
   }
 

@@ -15,6 +15,7 @@ import {
   GenerateApi,
   OpenAPIObject,
   ImportItem,
+  isDirectory,
 } from '@unoapi/core';
 import { createLogger } from '../utils/logger.js';
 
@@ -35,7 +36,7 @@ export function registerApiCommand(program: Command) {
     .argument('[urls...]', '接口 URL，可以是多个，用空格分隔')
     .description('生成 API 代码')
     .option('-u, --openapi-url <openapiUrl>', 'OpenAPI JSON 文档地址')
-    .option('-o, --output <output>', '输出目录，默认 src/api')
+    .option('-o, --output <output>', '输出目录或文件，默认 src/api')
     .option('--func <funcName>', '自定义 API 函数名称')
     .option('--only-model', '只生成 model 代码')
     .option('--all', '生成所有接口的代码')
@@ -145,6 +146,9 @@ export function registerApiCommand(program: Command) {
             const genModels = genApi.getModels(doc.components.schemas);
 
             let baseModelOutput = options.output || config.modelOutput;
+            if (!await isDirectory(baseModelOutput)) {
+              baseModelOutput = path.join(path.dirname(baseModelOutput), 'model');
+            }
             if (!onlyModel && baseApiOutput === baseModelOutput) {
               baseModelOutput = path.join(baseModelOutput, genApi.fileDir, 'model');
             } else {
@@ -161,12 +165,13 @@ export function registerApiCommand(program: Command) {
               consola.success('生成 model：', path.join(baseModelOutput, m.filePath));
             });
 
+            // 计算 model 导入路径
             if (fileNames.length) {
-              let relativePath = path.relative(path.join(baseApiOutput, genApi.fileDir), path.dirname(indexFilePath));
+              const genApiPath = await isDirectory(baseApiOutput) ? path.join(baseApiOutput, genApi.fileDir) : path.dirname(baseApiOutput);
+              let relativePath = path.relative(genApiPath, path.dirname(indexFilePath));
+              relativePath = relativePath.replace(/\\/g, '/');
               if (!relativePath.startsWith('.')) {
                 relativePath = `./${relativePath}`;
-              } else {
-                relativePath = relativePath.replace(/\\/g, '/');
               }
               modelImport = { path: relativePath, names: fileNames.filter(name => genApi.useModels?.includes(name)), onlyType: true };
             }
@@ -181,7 +186,11 @@ export function registerApiCommand(program: Command) {
               imports.push(modelImport);
             }
 
-            await writeApiToFile(genApi, { base: baseApiOutput, imports });
+            await writeApiToFile(genApi, {
+              base: baseApiOutput,
+              imports,
+              filePath: !await isDirectory(baseApiOutput) ? baseApiOutput : undefined,
+            });
             consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
             apiCount++;
           }
