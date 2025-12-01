@@ -16,7 +16,7 @@ export function transformTypeFieldCode(obj: TypeFieldOption | string, typeMappin
 
   let descriptionComment = '';
   if (obj.description) {
-    descriptionComment = obj.description.split('\n').filter(line => line.trim()).map((line) => `   * ${line}`).join('\n');
+    descriptionComment = obj.description.split('\n').map(line => line.trim()).filter(Boolean).map((line) => `   * ${line}`).join('\n');
   }
   const minLength = (obj.schema as SchemaObject)?.minLength;
   const maxLength = (obj.schema as SchemaObject)?.maxLength;
@@ -127,7 +127,7 @@ ${code}${space}}[]` : tsType;
       const { description, minLength, maxLength } = property as SchemaObject;
       let descriptionComment = '';
       if (description) {
-        descriptionComment = description.split('\n').filter(line => line.trim()).map((line) => `${space} * ${line}`).join('\n');
+        descriptionComment = description.split('\n').map(line => line.trim()).filter(Boolean).map((line) => `${space} * ${line}`).join('\n');
       }
       const minComment = minLength ? `${space} * 最小长度：${minLength}` : '';
       const maxComment = maxLength ? `${space} * 最大长度：${maxLength}` : '';
@@ -177,7 +177,11 @@ ${code}${space}}[]` : tsType;
 export function transformApiCode(apiContext: ApiContext, typeMapping?: Record<string, string>) {
   const { queryType, bodyType, responseType, comment, name, url, method, pathParams } = apiContext;
 
-  let paramStr = bodyType || queryType ? `data: ${bodyType || queryType}` : '';
+  let paramStr = [
+    queryType ? `query: ${queryType}` : '',
+    bodyType ? `data: ${bodyType}` : ''
+  ].filter(Boolean).join(', ');
+
   let urlStr = `'${url}'`;
   if (pathParams?.length) {
     let codeStr = pathParams.map((item) => transformTypeFieldCode(item, typeMapping).code).join('\n');
@@ -189,24 +193,27 @@ export function transformApiCode(apiContext: ApiContext, typeMapping?: Record<st
 
   const resStr = responseType ? `<${responseType}>` : '';
 
-  let apiFuncStr = `export function ${name}(${paramStr}) {
-  return request${resStr}({ url: ${urlStr},${bodyType || queryType ? ' data,' : ''} method: '${method.toUpperCase()}' });
-}`;
+  // 拼接函数
+  const funcLines = [
+    `export function ${name}(${paramStr}) {`,
+    `  return request${resStr}({`,
+    `    url: ${urlStr},`,
+    `    method: '${method.toUpperCase()}',`,
+    `    ${queryType ? 'query,' : ''}`,
+    `    ${bodyType ? 'data,' : ''}`,
+    `  });`,
+    `}`
+  ].filter(line => line.trim());
 
-  if (comment) {
-    apiFuncStr = `/**
- * ${comment}
- * @UNOAPI[${method}:${url}]
- */
-` + apiFuncStr;
-  } else {
-    apiFuncStr = `/**
- * @UNOAPI[${method}:${url}]
- */
-` + apiFuncStr;
-  }
+  // 添加注释
+  const commentLines = [
+    `/**`,
+    ...(comment?.split('\n').map(line => line.trim()).filter(Boolean).map(line => ` * ${line}`) || []),
+    ` * @UNOAPI[${method}:${url}]`,
+    ` */`
+  ];
 
-  return apiFuncStr;
+  return [...commentLines, ...funcLines].join('\n');
 }
 
 /**

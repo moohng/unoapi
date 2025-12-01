@@ -131,7 +131,10 @@ describe('transformApiCode', () => {
  * @UNOAPI[get:/api/users]
  */
 export function getUsers() {
-  return request<User[]>({ url: '/api/users', method: 'GET' });
+  return request<User[]>({
+    url: '/api/users',
+    method: 'GET',
+  });
 }`;
     const result = transformApiCode(context as any);
     expect(result).toBe(expectedCode);
@@ -143,13 +146,17 @@ export function getUsers() {
       method: 'post',
       name: 'createUser',
       bodyType: 'UserDTO',
-      responseType: 'User'
+      responseType: 'User',
     };
     const expectedCode = `/**
  * @UNOAPI[post:/api/users]
  */
 export function createUser(data: UserDTO) {
-  return request<User>({ url: '/api/users', data, method: 'POST' });
+  return request<User>({
+    url: '/api/users',
+    method: 'POST',
+    data,
+  });
 }`;
     const result = transformApiCode(context as any);
     expect(result).toBe(expectedCode);
@@ -161,15 +168,25 @@ export function createUser(data: UserDTO) {
       method: 'get',
       name: 'getUserById',
       pathParams: [{ name: 'id', required: true, schema: { type: 'integer' } }],
-      responseType: 'User'
+      queryType: 'UserQueryParams',
+      bodyType: 'UserDTO',
+      responseType: 'User',
+      comment: '获取用户详情    \n   123'
     };
     const expectedCode = `/**
+ * 获取用户详情
+ * 123
  * @UNOAPI[get:/api/users/{id}]
  */
 export function getUserById(params: {
   id: number;
-}) {
-  return request<User>({ url: \`/api/users/\${params.id}\`, method: 'GET' });
+}, query: UserQueryParams, data: UserDTO) {
+  return request<User>({
+    url: \`/api/users/\${params.id}\`,
+    method: 'GET',
+    query,
+    data,
+  });
 }`;
     const result = transformApiCode(context as any);
     expect(result).toBe(expectedCode);
