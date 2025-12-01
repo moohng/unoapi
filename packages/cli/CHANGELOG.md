@@ -1,5 +1,14 @@
 # @unoapi/cli
 
+## 2.1.2
+
+### Patch Changes
+
+- 1fd9a66: - 优化代码格式化问题
+  - 修复搜索卡顿问题
+- Updated dependencies [1fd9a66]
+  - @unoapi/core@2.1.2
+
 ## 2.1.1
 
 ### Patch Changes
