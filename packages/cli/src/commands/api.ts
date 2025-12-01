@@ -88,7 +88,7 @@ export function registerApiCommand(program: Command) {
               const methodStr = `[${api.method.toUpperCase()}]`;
               return {
                 value: api,
-                name: `${methodStr.padEnd(9)}${api.path} ${[api.summary, api.description].filter(Boolean).join(' - ')}`,
+                name: `${methodStr.padEnd(9)}${api.path} ${api.summary?.slice(0, 20)}`,
               };
             });
           },

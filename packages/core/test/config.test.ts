@@ -15,45 +15,48 @@ describe('config 模块测试', () => {
   });
 
   describe('defineUnoConfig', () => {
-    const testCases = [
-      {
-        name: '普通对象配置',
-        input: { openapiUrl: 'http://example.com' },
-        expected: { openapiUrl: 'http://example.com' }
-      },
-      {
-        name: '函数配置',
-        input: () => ({ openapiUrl: 'http://example.com' }),
-        expected: { openapiUrl: 'http://example.com' }
-      },
-      {
-        name: '异步函数配置',
-        input: async () => ({ openapiUrl: 'http://example.com' }),
-        expected: { openapiUrl: 'http://example.com' }
-      }
-    ];
+    it('测试：普通对象配置', async () => {
+      const input = { openapiUrl: 'http://example.com' };
+      const expected = { openapiUrl: 'http://example.com' };
+      const result = await defineUnoConfig(input);
+      expect(result).toEqual(expected);
+    });
 
-    for (const { name, input, expected } of testCases) {
-      it(`测试：${name}`, async () => {
-        const result = await defineUnoConfig(input);
-        expect(result).toEqual(expected);
-      });
-    }
+    it('测试：函数配置', async () => {
+      const input = () => ({ openapiUrl: 'http://example.com' });
+      const expected = { openapiUrl: 'http://example.com' };
+      const result = await defineUnoConfig(input);
+      expect(result).toEqual(expected);
+    });
+
+    it('测试：异步函数配置', async () => {
+      const input = async () => ({ openapiUrl: 'http://example.com' });
+      const expected = { openapiUrl: 'http://example.com' };
+      const result = await defineUnoConfig(input);
+      expect(result).toEqual(expected);
+    });
   });
 
   describe('getConfigFile', () => {
-    const testCases = [
-      { type: UnoConfigType.PACKAGE, expected: path.join(cwd, 'package.json') },
-      { type: UnoConfigType.JS, expected: path.join(cwd, 'unoapi.config.js') },
-      { type: UnoConfigType.TS, expected: path.join(cwd, 'unoapi.config.ts') },
-      { type: undefined, expected: path.join(cwd, 'package.json') }
-    ];
+    it('测试：获取 PACKAGE 类型的配置文件路径', () => {
+      const expected = path.join(cwd, 'package.json');
+      expect(getConfigFile(UnoConfigType.PACKAGE)).toBe(expected);
+    });
 
-    for (const { type, expected } of testCases) {
-      it(`测试：获取 ${type ? UnoConfigType[type] : '默认'} 类型的配置文件路径`, () => {
-        expect(getConfigFile(type)).toBe(expected);
-      });
-    }
+    it('测试：获取 JS 类型的配置文件路径', () => {
+      const expected = path.join(cwd, 'unoapi.config.js');
+      expect(getConfigFile(UnoConfigType.JS)).toBe(expected);
+    });
+
+    it('测试：获取 TS 类型的配置文件路径', () => {
+      const expected = path.join(cwd, 'unoapi.config.ts');
+      expect(getConfigFile(UnoConfigType.TS)).toBe(expected);
+    });
+
+    it('测试：获取 默认 类型的配置文件路径', () => {
+      const expected = path.join(cwd, 'package.json');
+      expect(getConfigFile(undefined)).toBe(expected);
+    });
   });
 
   describe('existsConfig', () => {
@@ -66,36 +69,17 @@ describe('config 模块测试', () => {
       expect(fs.readFile).toHaveBeenCalledWith(pkgPath, 'utf-8');
     });
 
-    // Since mocking require is complex dynamically in loop, we'll focus on fs.access for JS/TS
-    // and skip PACKAGE for now or handle it separately if needed.
-    // Let's stick to simple fs mocks for now.
+    it('测试：JS 配置文件存在', async () => {
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      const result = await existsConfig(UnoConfigType.JS);
+      expect(result).toBe(true);
+    });
 
-    const fsTestCases = [
-      {
-        name: 'JS 配置文件存在',
-        type: UnoConfigType.JS,
-        exists: true,
-        expected: true
-      },
-      {
-        name: 'TS 配置文件不存在',
-        type: UnoConfigType.TS,
-        exists: false,
-        expected: false
-      }
-    ];
-
-    for (const { name, type, exists, expected } of fsTestCases) {
-      it(`测试：${name}`, async () => {
-        if (exists) {
-          vi.mocked(fs.access).mockResolvedValue(undefined);
-        } else {
-          vi.mocked(fs.access).mockRejectedValue(new Error());
-        }
-        const result = await existsConfig(type);
-        expect(result).toBe(expected);
-      });
-    }
+    it('测试：TS 配置文件不存在', async () => {
+      vi.mocked(fs.access).mockRejectedValue(new Error());
+      const result = await existsConfig(UnoConfigType.TS);
+      expect(result).toBe(false);
+    });
   });
 
   // Testing checkConfig logic via loadConfig (mocking the loading part)
