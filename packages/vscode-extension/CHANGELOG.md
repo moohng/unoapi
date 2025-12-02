@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [98cb11e]
+  - @unoapi/core@2.2.0
+
 ## 0.0.7
 
 ### Patch Changes
