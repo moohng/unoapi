@@ -96,7 +96,7 @@ describe('config 模块测试', () => {
 
       const config = await loadConfig();
       expect(config.output).toBe(path.join(cwd, 'src/api'));
-      expect(config.cacheFile).toBe(path.join(cwd, 'src/api/.unoapi.cache.json'));
+      expect(config.cacheFile).toBe(path.join(cwd, DEFAULT_CACHE_FILE));
     });
 
     it('测试：从 package.json 加载', async () => {
@@ -107,7 +107,7 @@ describe('config 模块测试', () => {
       expect(config.input).toBe('url');
       expect(config.output).toBe(path.join(cwd, 'out'));
       expect(config.modelOutput).toBe(path.join(cwd, 'out'));
-      expect(config.cacheFile).toBe(path.join(cwd, 'out/.unoapi.cache.json'));
+      expect(config.cacheFile).toBe(path.join(cwd, DEFAULT_CACHE_FILE));
       expect(config.onlyModel).toBe(true);
     });
   });
