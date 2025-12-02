@@ -1,5 +1,11 @@
 # @unoapi/core
 
+## 2.2.0
+
+### Minor Changes
+
+- 98cb11e: 去掉 cacheFile 字段
+
 ## 2.1.2
 
 ### Patch Changes
