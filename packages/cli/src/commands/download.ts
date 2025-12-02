@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { downloadDoc, loadConfig } from '@unoapi/core';
+import { downloadDoc } from '@unoapi/core';
 import { createLogger } from '../utils/logger.js';
 
 const consola = createLogger();
@@ -7,23 +7,17 @@ const consola = createLogger();
 export function registerDownloadCommand(program: Command) {
   program
     .command('download')
-    .argument('[openapiUrl]', 'OpenAPI JSON 文档地址')
+    .argument('<openapiUrl>', 'OpenAPI JSON 在线文档地址')
+    .argument('[output]', '输出文件路径')
+    .option('-o, --output [output]', '输出文件路径')
     .description('下载 OpenAPI 文档')
-    .action(async (openapiUrl: string) => {
-      const config = await loadConfig();
-
-      if (!openapiUrl && !config.openapiUrl) {
-        consola.fail('请提供一个 openapiUrl 地址，或先运行 uno init 生成配置文件');
-        process.exit(1);
-      }
-
-      const url = openapiUrl || config.openapiUrl;
+    .action(async (openapiUrl: string, output?: string, options: { output?: string } = {}) => {
       try {
         consola.start('正在下载 OpenAPI 文档...');
-        await downloadDoc(url, config.cacheFile);
-        consola.success('下载成功！已保存到：', config.cacheFile);
+        const path = await downloadDoc(openapiUrl, output || options.output);
+        consola.success('下载成功！已保存到：', path);
       } catch {
-        consola.fail(new Error(`下载失败，请检查 openapiUrl：${url} 是否正确！`));
+        consola.fail(new Error(`下载失败，请检查 openapiUrl：${openapiUrl} 是否正确！`));
         process.exit(1);
       }
     });

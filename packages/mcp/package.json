@@ -1,0 +1,19 @@
+{
+  "name": "@unoapi/mcp",
+  "version": "1.0.0",
+  "description": "UnoAPI MCP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "unoapi"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@unoapi/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.23.0",
+    "zod": "4.1.3"
+  }
+}

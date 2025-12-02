@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import { parseRefKey } from './parse';
 
 /**
@@ -93,4 +94,8 @@ export async function isDirectory(path: string) {
   } catch {
     return path.endsWith('/') || !path.split('.')[1];
   }
+}
+
+export function pathToAbsolute(input: string) {
+  return path.isAbsolute(input) ? input : path.join(process.cwd(), input);
 }
