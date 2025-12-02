@@ -13,17 +13,13 @@ export type OpenApiInput = string | (() => Promise<OpenAPIObject> | OpenAPIObjec
  */
 export interface UnoUserConfig {
   /**
-   * OpenAPI URL 地址，可以是字符串或返回字符串的函数
+   * OpenAPI 文档的 URL 地址或本地路径，可以是字符串或返回字符串的函数
    */
-  openapiUrl?: OpenApiInput;
+  input?: OpenApiInput;
   /**
    * 输出目录，默认 src/api；数组表示models输出目录
    */
   output?: string | [string, string];
-  /**
-   * 缓存文件，默认 [output]/.openapi-cache.json
-   */
-  cacheFile?: string;
   /**
    * 自定义类型映射
    */
@@ -91,18 +87,18 @@ export function getConfigFile(type = UnoConfigType.PACKAGE) {
 }
 
 /** 默认输出目录 */
-const DEFAULT_OUTPUT = 'src/api';
+export const DEFAULT_OUTPUT = 'src/api';
+
+/** 默认缓存文件 */
+export const DEFAULT_CACHE_FILE = '.unoapi.cache.json';
 
 /**
- * 获取默认缓存文件路径
+ * 获取缓存文件路径
  * @param output 输出目录
  * @returns
  */
-function getDefaultCacheFile(output = DEFAULT_OUTPUT) {
-  if (!path.isAbsolute(output)) {
-    output = path.join(process.cwd(), output || DEFAULT_OUTPUT);
-  }
-  return path.join(output, '.openapi-cache.json');
+export function getCacheFile(output?: string) {
+  return path.resolve(process.cwd(), output || '', DEFAULT_CACHE_FILE);
 }
 
 /**
@@ -118,16 +114,15 @@ export async function generateConfigFile(url = 'https://api.example.com/openapi.
       packageJson = JSON.parse(packageContent);
     } catch { }
     packageJson.unoapi = {
-      openapiUrl: url,
+      input: url,
     };
     await fs.writeFile(configPath, JSON.stringify(packageJson, null, 2));
   } else {
     let configContent = `import { defineUnoConfig } from '@unoapi/core';
 
 export default defineUnoConfig({
-  openapiUrl: '${url}', // 支持返回 Promise 的回调函数
+  input: '${url}', // 本地或url路径
   // output: 'src/api', // 如需单独指定模型输出目录：['src/api', 'src/models'],
-  // cacheFile: 'src/api/.openapi-cache.json', // 缓存目录
   // typeMapping: { float: number }, // 自定义类型映射优先
 
   // funcTpl: (context) => { // 自定义 API 函数
@@ -209,7 +204,7 @@ function checkConfig(config?: UnoUserConfig): UnoConfig {
     return {
       output,
       modelOutput: output,
-      cacheFile: getDefaultCacheFile(output),
+      cacheFile: getCacheFile(),
     };
   }
 
@@ -234,13 +229,7 @@ function checkConfig(config?: UnoUserConfig): UnoConfig {
     localConfig.modelOutput = localConfig.output;
   }
 
-  if (config.cacheFile) {
-    if (!path.isAbsolute(config.cacheFile)) {
-      localConfig.cacheFile = path.join(process.cwd(), config.cacheFile);
-    }
-  } else {
-    localConfig.cacheFile = getDefaultCacheFile(localConfig.output);
-  }
+  localConfig.cacheFile = getCacheFile();
 
   if (typeof config.imports === 'string') {
     localConfig.imports = [config.imports];

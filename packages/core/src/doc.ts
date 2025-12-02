@@ -1,49 +1,65 @@
-import { OpenApiInput } from './config.js';
+import { getCacheFile, OpenApiInput } from './config.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
 import { writeToFile } from './write.js';
 import { ApiOperationObject } from './types.js';
+import { isDirectory, pathToAbsolute } from './tools.js';
 
 /**
- * 更新 OpenAPI 文档
- * @param input OpenAPI 文档 URL 或获取函数
+ * 下载 OpenAPI 文档
+ * @param openapiUrl OpenAPI 文档 URL
  * @param output 缓存文件路径
- * @returns OpenAPI 文档对象
+ * @returns 缓存文件路径
  */
-export async function downloadDoc(input: OpenApiInput, output?: string) {
-  const jsonDoc = await (typeof input === 'function' ? input() : fetchDoc(input));
-  if (output) {
-    try {
-      await writeToFile(output, JSON.stringify(jsonDoc, null, 2));
-    } catch {
-      throw new Error('文档缓存失败！');
-    }
+export async function downloadDoc(openapiUrl: string, output?: string) {
+  const doc = await fetchDoc(openapiUrl);
+  output = output ? (await isDirectory(output) ? getCacheFile(output) : output) : getCacheFile();
+  try {
+    await writeToFile(output, JSON.stringify(doc, null, 2));
+    return output;
+  } catch {
+    throw new Error('文档缓存失败！');
   }
-
-  return jsonDoc as OpenAPIObject;
 }
 
-async function fetchDoc(url: string) {
-  const res = await fetch(url);
-  const resJson = await res.json() as any;
-  if (!res.ok) {
-    throw new Error(`无法获取 OpenAPI 文档：${res.status} ${res.statusText}，${resJson.message}`);
+/**
+ * 获取 OpenAPI 文档
+ * @param openapiUrl OpenAPI 文档 URL
+ * @returns OpenAPI 文档对象
+ */
+async function fetchDoc(openapiUrl: string) {
+  try {
+    const res = await fetch(openapiUrl);
+    const resJson = await res.json() as OpenAPIObject;
+    if (!res.ok) {
+      throw new Error(`无法获取 OpenAPI 文档：${res.status} ${res.statusText}`);
+    }
+    return resJson;
+  } catch {
+    throw new Error(`无法获取 OpenAPI 文档：${openapiUrl}`);
   }
-  return resJson;
 }
 
 /**
  * 加载 OpenAPI 文档
- * @param cacheFile 缓存文件路径
- * @returns 文档对象
+ * @param input OpenAPI 文档 URL 或本地文件路径
+ * @returns OpenAPI 文档对象
  */
-export function loadDoc(cacheFile: string) {
-  try {
-    delete require.cache[require.resolve(cacheFile)];
-    const doc = require(cacheFile) as OpenAPIObject;
-    return doc;
-  } catch {
-    throw new Error(`加载 OpenAPI 文档失败，检查缓存文件 ${cacheFile} 是否存在`);
+export async function loadDoc(input: OpenApiInput) {
+  if (typeof input === 'string') {
+    if (/https?:\/\//.test(input)) {
+      return fetchDoc(input);
+    }
+    try {
+      input = pathToAbsolute(input);
+      delete require.cache[require.resolve(input)];
+      const doc = require(input) as OpenAPIObject;
+      return doc;
+    } catch {
+      throw new Error(`加载 OpenAPI 文档失败，检查文件 ${input} 是否存在`);
+    }
   }
+
+  return input();
 }
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
-import { isBaseType, upperFirst, existsPath, isSimilar, isAllowGenerate, getAllowTypeName } from '../src/tools';
+import { isBaseType, upperFirst, existsPath, isSimilar, isAllowGenerate, getAllowTypeName, isDirectory } from '../src/tools';
 
 // Mock fs/promises
 vi.mock('fs/promises');
@@ -147,3 +147,13 @@ describe('getAllowTypeName', () => {
     expect(getAllowTypeName('Res<User[]>', ['Res'])).toBe('User[]');
   });
 });
+
+describe('isDirectory', () => {
+  it('测试：', async () => {
+    expect(await isDirectory('./')).toBe(true);
+    expect(await isDirectory('./abc')).toBe(false);
+    expect(await isDirectory('./abc/')).toBe(true);
+    expect(await isDirectory('./abc/def')).toBe(false);
+    expect(await isDirectory('./abc/def/')).toBe(true);
+  });
+})

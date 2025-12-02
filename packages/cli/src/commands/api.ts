@@ -7,7 +7,6 @@ import {
   generateSingleApiCode,
   searchApi,
   loadDoc,
-  downloadDoc,
   filterApi,
   writeApiToFile,
   writeModelToFile,
@@ -22,7 +21,7 @@ import { createLogger } from '../utils/logger.js';
 const consola = createLogger();
 
 interface CliApiOptions {
-  openapiUrl?: string;
+  input?: string;
   output?: string;
   func?: string;
   onlyModel?: boolean;
@@ -35,43 +34,39 @@ export function registerApiCommand(program: Command) {
     .command('api', { isDefault: true })
     .argument('[urls...]', '接口 URL，可以是多个，用空格分隔')
     .description('生成 API 代码')
-    .option('-u, --openapi-url <openapiUrl>', 'OpenAPI JSON 文档地址')
+    .option('-i, --input <input>', 'OpenAPI JSON 文档本地或远程地址')
     .option('-o, --output <output>', '输出目录或文件，默认 src/api')
     .option('--func <funcName>', '自定义 API 函数名称')
     .option('--only-model', '只生成 model 代码')
     .option('--all', '生成所有接口的代码')
     .action(async (urls: (string | ApiOperationObject)[], options: CliApiOptions) => {
       const config = await loadConfig();
-
       let doc: OpenAPIObject;
 
-      if (options.openapiUrl) {
+      // 优先使用命令行参数
+      const input = options.input || config.input;
+      if (input) {
         try {
-          consola.start('下载远程文档...', options.openapiUrl);
-          doc = await downloadDoc(options.openapiUrl);
-          consola.success('下载成功！');
+          consola.start('加载文档...', input);
+          doc = await loadDoc(input);
+          consola.success('加载成功！');
         } catch {
-          consola.fail(new Error(`下载 OpenAPI JSON 文档失败，请检查 openapiUrl：${options.openapiUrl} 是否正确！`));
+          consola.fail(new Error(`加载文档失败，请检查参数 input：${input} 是否正确！`));
           process.exit(1);
         }
       } else {
-        try {
-          doc = loadDoc(config.cacheFile);
-          consola.success('已从本地缓存加载文档', config.cacheFile);
-        } catch {
-          if (config.openapiUrl) {
-            try {
-              consola.start('下载远程文档...', config.openapiUrl);
-              doc = await downloadDoc(config.openapiUrl);
-              consola.success('下载成功！');
-            } catch {
-              consola.fail(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 openapiUrl：${config.openapiUrl} 是否正确！`));
-              process.exit(1);
-            }
-          } else {
-            consola.fail('请使用 -u 参数提供一个 openapiUrl 地址，或先运行 uno init 生成配置文件！');
+        if (config.cacheFile) {
+          try {
+            consola.start('从默认缓存文件加载文档...', config.cacheFile);
+            doc = await loadDoc(config.cacheFile);
+            consola.success('加载成功！');
+          } catch {
+            consola.fail(new Error(`未找到 OpenAPI JSON 文档，请检查配置文件中的 input：${config.input} 是否正确！`));
             process.exit(1);
           }
+        } else {
+          consola.fail('请使用 -i 参数提供一个文档地址，或先运行 uno init 生成配置文件！');
+          process.exit(1);
         }
       }
 

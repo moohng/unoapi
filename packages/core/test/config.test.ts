@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { defineUnoConfig, getConfigFile, UnoConfigType, existsConfig, loadConfig } from '../src/config';
+import { defineUnoConfig, getConfigFile, UnoConfigType, existsConfig, loadConfig, getCacheFile, DEFAULT_CACHE_FILE } from '../src/config';
 
 // Mock fs/promises
 vi.mock('fs/promises');
@@ -16,22 +16,22 @@ describe('config 模块测试', () => {
 
   describe('defineUnoConfig', () => {
     it('测试：普通对象配置', async () => {
-      const input = { openapiUrl: 'http://example.com' };
-      const expected = { openapiUrl: 'http://example.com' };
+      const input = { input: 'http://example.com' };
+      const expected = { input: 'http://example.com' };
       const result = await defineUnoConfig(input);
       expect(result).toEqual(expected);
     });
 
     it('测试：函数配置', async () => {
-      const input = () => ({ openapiUrl: 'http://example.com' });
-      const expected = { openapiUrl: 'http://example.com' };
+      const input = () => ({ input: 'http://example.com' });
+      const expected = { input: 'http://example.com' };
       const result = await defineUnoConfig(input);
       expect(result).toEqual(expected);
     });
 
     it('测试：异步函数配置', async () => {
-      const input = async () => ({ openapiUrl: 'http://example.com' });
-      const expected = { openapiUrl: 'http://example.com' };
+      const input = async () => ({ input: 'http://example.com' });
+      const expected = { input: 'http://example.com' };
       const result = await defineUnoConfig(input);
       expect(result).toEqual(expected);
     });
@@ -96,19 +96,47 @@ describe('config 模块测试', () => {
 
       const config = await loadConfig();
       expect(config.output).toBe(path.join(cwd, 'src/api'));
-      expect(config.cacheFile).toBe(path.join(cwd, 'src/api/.openapi-cache.json'));
+      expect(config.cacheFile).toBe(path.join(cwd, 'src/api/.unoapi.cache.json'));
     });
 
     it('测试：从 package.json 加载', async () => {
-      const mockConfig = { unoapi: { openapiUrl: 'url', output: 'out', onlyModel: true } };
+      const mockConfig = { unoapi: { input: 'url', output: 'out', onlyModel: true } };
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockConfig));
 
       const config = await loadConfig();
-      expect(config.openapiUrl).toBe('url');
+      expect(config.input).toBe('url');
       expect(config.output).toBe(path.join(cwd, 'out'));
       expect(config.modelOutput).toBe(path.join(cwd, 'out'));
-      expect(config.cacheFile).toBe(path.join(cwd, 'out/.openapi-cache.json'));
+      expect(config.cacheFile).toBe(path.join(cwd, 'out/.unoapi.cache.json'));
       expect(config.onlyModel).toBe(true);
+    });
+  });
+
+  describe('getCacheFile', () => {
+    it('测试：获取缓存文件路径', () => {
+      const output = path.join(cwd, 'out');
+      const expected = path.join(output, DEFAULT_CACHE_FILE);
+      expect(getCacheFile(output)).toBe(expected);
+    });
+
+    it('测试：获取缓存文件路径（默认）', () => {
+      const expected = path.join(cwd, DEFAULT_CACHE_FILE);
+      expect(getCacheFile()).toBe(expected);
+    });
+
+    it('测试：获取缓存文件路径（不存在）', () => {
+      const expected = path.join(cwd, DEFAULT_CACHE_FILE);
+      expect(getCacheFile('')).toBe(expected);
+    });
+
+    it('测试：获取缓存文件路径（不存在）', () => {
+      const expected = path.join(cwd, 'out', DEFAULT_CACHE_FILE);
+      expect(getCacheFile('./out')).toBe(expected);
+    });
+
+    it('测试：获取缓存文件路径（不存在）', () => {
+      const expected = path.join(cwd, DEFAULT_CACHE_FILE);
+      expect(getCacheFile('./')).toBe(expected);
     });
   });
 });
