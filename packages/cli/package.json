@@ -1,6 +1,6 @@
 {
   "name": "@unoapi/cli",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "UnoAPI 的命令行工具",
   "main": "dist/cli.js",
   "bin": {
