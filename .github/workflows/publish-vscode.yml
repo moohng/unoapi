@@ -49,6 +49,7 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           cd packages/vscode-extension
+          pnpm build
           pnpm package
           pnpm run publish:marketplace
           
