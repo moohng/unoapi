@@ -1,5 +1,16 @@
 # @unoapi/cli
 
+## 2.2.0
+
+### Minor Changes
+
+- 98cb11e: 去掉 cacheFile 字段
+
+### Patch Changes
+
+- Updated dependencies [98cb11e]
+  - @unoapi/core@2.2.0
+
 ## 2.1.2
 
 ### Patch Changes
