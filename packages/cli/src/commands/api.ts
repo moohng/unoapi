@@ -1,21 +1,15 @@
-import * as path from 'path';
 import { Command } from 'commander';
 import * as inquirer from '@inquirer/prompts';
 import {
   loadConfig,
   generateCode,
   generateSingleApiCode,
-  searchApi,
   loadDoc,
+  searchApi,
   filterApi,
-  writeApiToFile,
-  writeModelToFile,
-  ApiOperationObject,
-  GenerateApi,
-  OpenAPIObject,
-  ImportItem,
-  isDirectory,
+  autoWriteAll,
 } from '@unoapi/core';
+import type { ApiOperationObject, GenerateApi, OpenAPIObject } from '@unoapi/core';
 import { createLogger } from '../utils/logger.js';
 
 const consola = createLogger();
@@ -32,19 +26,20 @@ interface CliApiOptions {
 export function registerApiCommand(program: Command) {
   program
     .command('api', { isDefault: true })
-    .argument('[urls...]', '接口 URL，可以是多个，用空格分隔')
+    .argument('[input]', 'OpenAPI JSON 文档本地或远程地址')
+    .argument('[output]', '指定输出目录或文件，会忽略从 url 中解析的目录结构')
     .description('生成 API 代码')
     .option('-i, --input <input>', 'OpenAPI JSON 文档本地或远程地址')
-    .option('-o, --output <output>', '输出目录或文件，默认 src/api')
-    .option('--func <funcName>', '自定义 API 函数名称')
+    .option('-o, --output <output>', '指定输出目录或文件，会忽略从 url 中解析的目录结构')
+    .option('--func <funcName>', '自定义 API 函数名称，生成单个 API 函数时生效')
     .option('--only-model', '只生成 model 代码')
     .option('--all', '生成所有接口的代码')
-    .action(async (urls: (string | ApiOperationObject)[], options: CliApiOptions) => {
+    .action(async (openapiURI?: string, output?: string, options?: CliApiOptions) => {
       const config = await loadConfig();
       let doc: OpenAPIObject;
 
       // 优先使用命令行参数
-      const input = options.input || config.input;
+      const input = openapiURI || options?.input || config.input;
       if (input) {
         try {
           consola.start('加载文档...', input);
@@ -70,11 +65,12 @@ export function registerApiCommand(program: Command) {
         }
       }
 
+      let apis: ApiOperationObject[] = [];
       if (options.all) {
         // 生成所有接口的代码
-        urls = searchApi(doc);
+        apis = searchApi(doc);
         consola.info('生成所有接口');
-      } else if (urls?.length === 0) {
+      } else {
         // 让用户选择
         const selectedUrl = await inquirer.search<ApiOperationObject>({
           message: '使用关键字搜索接口：',
@@ -91,23 +87,18 @@ export function registerApiCommand(program: Command) {
           pageSize: 10,
         });
 
-        urls = [selectedUrl];
+        apis = [selectedUrl];
       }
 
-      if (typeof urls[0] === 'string') {
-        urls = filterApi(doc, urls as string[]);
+      if (!apis.length) {
+        consola.warn('未找到接口');
+        process.exit(0);
       }
 
       consola.start('生成接口代码...');
 
       let genApis: GenerateApi[] = [];
-
-      if (!urls.length) {
-        consola.warn('未找到接口');
-        process.exit(0);
-      }
-
-      if (urls.length === 1) {
+      if (apis.length === 1) {
         if (!options.func && !options.onlyModel) {
           // 让用户输入一个函数名称
           const funcName = await inquirer.input({
@@ -115,81 +106,36 @@ export function registerApiCommand(program: Command) {
           });
           options.func = funcName;
         }
-        genApis.push(generateSingleApiCode(urls[0] as ApiOperationObject, {
+        genApis.push(generateSingleApiCode(apis[0], {
           funcName: options.func,
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
           ignores: config.ignores,
         }));
       } else {
-        genApis = generateCode(urls as ApiOperationObject[], {
+        genApis = generateCode(apis, {
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
           ignores: config.ignores,
         });
       }
 
+      // 写入文件
+
       try {
-        let apiCount = 0;
-        let modelCount = 0;
-        for (const genApi of genApis) {
-          const baseApiOutput = options.output || config.output;
-          const onlyModel = options.onlyModel ?? config.onlyModel;
-          let modelImport: ImportItem | undefined;
-
-          if (doc.components?.schemas) {
-            const genModels = genApi.getModels(doc.components.schemas);
-
-            let baseModelOutput = options.output || config.modelOutput;
-            if (!await isDirectory(baseModelOutput)) {
-              baseModelOutput = path.join(path.dirname(baseModelOutput), 'model');
-            }
-            if (!onlyModel && baseApiOutput === baseModelOutput) {
-              baseModelOutput = path.join(baseModelOutput, genApi.fileDir, 'model');
-            } else {
-              baseModelOutput = path.join(baseModelOutput, genApi.fileDir);
-            }
-
-            const { indexFilePath, fileNames } = await writeModelToFile(genModels, {
-              base: baseModelOutput,
-            });
-
-            modelCount += genModels.length;
-
-            genModels.forEach(m => {
-              consola.success('生成 model：', path.join(baseModelOutput, m.filePath));
-            });
-
-            // 计算 model 导入路径
-            if (fileNames.length) {
-              const genApiPath = await isDirectory(baseApiOutput) ? path.join(baseApiOutput, genApi.fileDir) : path.dirname(baseApiOutput);
-              let relativePath = path.relative(genApiPath, path.dirname(indexFilePath));
-              relativePath = relativePath.replace(/\\/g, '/');
-              if (!relativePath.startsWith('.')) {
-                relativePath = `./${relativePath}`;
-              }
-              modelImport = { path: relativePath, names: fileNames.filter(name => genApi.useModels?.includes(name)), onlyType: true };
-            }
-          }
-
-          // 写入 api 文件
-          if (!onlyModel) {
-            const imports: (string | ImportItem)[] = config.imports ? [...config.imports] : [];
-
-            // 计算 model 导入路径
-            if (modelImport) {
-              imports.push(modelImport);
-            }
-
-            await writeApiToFile(genApi, {
-              base: baseApiOutput,
-              imports,
-              filePath: !await isDirectory(baseApiOutput) ? baseApiOutput : undefined,
-            });
-            consola.success('生成 api：  ', path.join(baseApiOutput, genApi.filePath));
-            apiCount++;
-          }
-        }
+        // 覆盖配置文件中的 output
+        const overrideOutput = output || options.output;
+        const { apiCount, modelCount } = await autoWriteAll(genApis, {
+          apiOutput: overrideOutput || config.output,
+          modelOutput: config.modelOutput,
+          isOverride: !!overrideOutput,
+          onlyModel: options.onlyModel ?? config.onlyModel,
+          schemas: doc.components?.schemas,
+          imports: config.imports,
+          writedCallback: (type, filePath) => {
+            consola.success(`生成 ${type}：  ${filePath}`);
+          },
+        });
 
         consola.success(`本次生成 api: ${apiCount} 个， model: ${modelCount} 个`);
       } catch (error) {

@@ -62,7 +62,7 @@
       },
       {
         "command": "unoapi.generateModel",
-        "title": "[model] 生成 Model 代码",
+        "title": "[model] 只生成 Model 代码",
         "category": "UnoAPI"
       }
     ],

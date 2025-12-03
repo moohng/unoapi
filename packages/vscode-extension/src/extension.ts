@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { createStatusBar, updateStatusBar, setupFileWatchers } from './statusBar.js';
+import { createStatusBar, updateStatusBar, setupFileWatchers } from './statusBar';
 import {
   registerInitConfigCommand,
   registerDownloadDocCommand,
   registerGenerateApiCommand,
   registerGenerateModelCommand,
-} from './commands.js';
+} from './commands';
 
 export async function activate(context: vscode.ExtensionContext) {
   // Create and initialize status bar

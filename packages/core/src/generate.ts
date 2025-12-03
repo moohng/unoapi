@@ -197,7 +197,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
     refs: apiRefs,
     useModels: [queryTypeName, bodyTypeName, responseTypeName].filter(Boolean),
     getModels: (schemas) => {
-      const results = generateModelCode(schemas, apiRefs, { typeMapping: options?.typeMapping, ignores: options?.ignores });
+      const results = generateModelCode(apiRefs, { typeMapping: options?.typeMapping, ignores: options?.ignores, schemas });
       for (const codeContext of results || []) {
         const filePath = path.join(dirName, codeContext.fileFullName);
         generateModelContextList.push({
@@ -214,6 +214,7 @@ export function generateSingleApiCode(parsedApi: ApiOperationObject, options?: G
 interface GenerateModelOptions {
   typeMapping?: Record<string, string>;
   ignores?: (string | RegExp)[];
+  schemas?: ModelSchemaCollection;
 }
 
 /**
@@ -223,7 +224,7 @@ interface GenerateModelOptions {
  * @param options 选项
  * @returns
  */
-export function generateModelCode(schemas: ModelSchemaCollection, refs: (string | ApiObjectRef)[], options?: GenerateModelOptions) {
+export function generateModelCode(refs: (string | ApiObjectRef)[], options?: GenerateModelOptions) {
   const allRefsSet = new Set<string | ApiObjectRef>(refs);
   const allContextList: GenerateModel[] = [];
 
@@ -232,7 +233,7 @@ export function generateModelCode(schemas: ModelSchemaCollection, refs: (string 
     let refKey = '';
     if (typeof ref === 'string') {
       refKey = ref.replace('#/components/schemas/', '');
-      modelObj = schemas[refKey];
+      modelObj = options?.schemas?.[refKey];
       if (!modelObj) {
         console.error(`${refKey} 不存在！`);
         return;

@@ -17,7 +17,9 @@ export interface UnoUserConfig {
    */
   input?: OpenApiInput;
   /**
-   * 输出目录，默认 src/api；数组表示models输出目录
+   * 输出目录，默认 src/api，api 文件与 model 文件放在一起
+   * 如果想单独管理 model 文件，使用数组表示 [apiOutput, modelOutput]
+   * 基本输出目录，完整的目录结构会自动根据 url 来解析
    */
   output?: string | [string, string];
   /**
@@ -56,7 +58,7 @@ export type FuncTplCallback = (context: ApiContext) => string;
 
 export interface UnoConfig extends UnoUserConfig {
   output: string;
-  modelOutput: string;
+  modelOutput?: string;
   cacheFile: string;
   imports?: string[];
 }
@@ -203,7 +205,6 @@ function checkConfig(config?: UnoUserConfig): UnoConfig {
     const output = path.join(process.cwd(), DEFAULT_OUTPUT);
     return {
       output,
-      modelOutput: output,
       cacheFile: getCacheFile(),
     };
   }
@@ -214,7 +215,6 @@ function checkConfig(config?: UnoUserConfig): UnoConfig {
     if (!path.isAbsolute(config.output)) {
       localConfig.output = path.join(process.cwd(), config.output);
     }
-    localConfig.modelOutput = localConfig.output;
   } else if (Array.isArray(config.output)) {
     config.output = config.output.map((dir) => {
       if (!path.isAbsolute(dir)) {
@@ -226,7 +226,6 @@ function checkConfig(config?: UnoUserConfig): UnoConfig {
     localConfig.modelOutput = config.output[1];
   } else {
     localConfig.output = path.join(process.cwd(), DEFAULT_OUTPUT);
-    localConfig.modelOutput = localConfig.output;
   }
 
   localConfig.cacheFile = getCacheFile();
