@@ -80,11 +80,6 @@
         },
         {
           "command": "unoapi.generateModel",
-          "when": "resourceExtname == .ts",
-          "group": "unoapi"
-        },
-        {
-          "command": "unoapi.generateModel",
           "when": "explorerResourceIsFolder",
           "group": "unoapi"
         }

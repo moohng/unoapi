@@ -3,12 +3,10 @@ import { searchApi, ApiOperationObject, OpenAPIObject } from '@unoapi/core';
 
 export async function pickApis(doc: OpenAPIObject): Promise<ApiOperationObject[]> {
   const apis = searchApi(doc);
-
-  const MAX_API_COUNT = 100;
-
-  const apiItems = apis.slice(0, MAX_API_COUNT).map((a) => ({
+  const apiItems = apis.map((a) => ({
     label: `[${a.method.toUpperCase()}] ${a.path}`,
-    description: [a.summary, a.description].filter(Boolean).join(' - '),
+    description: a.summary,
+    detail: a.description,
     api: a,
   }));
 
@@ -17,20 +15,7 @@ export async function pickApis(doc: OpenAPIObject): Promise<ApiOperationObject[]
   quickPick.canSelectMany = true;
   quickPick.placeholder = '搜索接口';
   quickPick.matchOnDescription = true;
-
-  quickPick.onDidChangeValue((value) => {
-    if (value) {
-      const filtered = searchApi(doc, value);
-      const filteredItems = filtered.slice(0, MAX_API_COUNT).map((a) => ({
-        label: `[${a.method.toUpperCase()}] ${a.path}`,
-        description: [a.summary, a.description].filter(Boolean).join(' - '),
-        api: a,
-      }));
-      quickPick.items = filteredItems;
-    } else {
-      quickPick.items = apiItems;
-    }
-  });
+  quickPick.matchOnDetail = true;
 
   return new Promise((resolve) => {
 

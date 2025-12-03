@@ -3,16 +3,12 @@ import * as path from 'path';
 import {
   loadConfig,
   downloadDoc,
-  searchApi,
   UnoConfigType,
   generateConfigFile,
   existsConfig,
-  ApiOperationObject,
   OpenAPIObject,
   loadDoc,
   autoWriteAll,
-  GenerateApi,
-  generateSingleApiCode,
   generateCode,
 } from '@unoapi/core';
 import { updateStatusBar, setStatusBarLoading } from './statusBar';
@@ -137,46 +133,27 @@ export function registerGenerateApiCommand(context: vscode.ExtensionContext) {
       }
 
       const selected = await pickApis(doc);
-      if (Array.isArray(selected) && selected.length === 0) {
-        return;
-      }
-
-      let genApis: GenerateApi[] = [];
-
       if (!selected.length) {
         console.warn('未找到接口');
         return;
       }
 
-      if (selected.length === 1) {
-        let funcName: string | undefined;
-        if (!onlyModel && !config.onlyModel) {
-        // 让用户输入一个函数名称
-          funcName = await vscode.window.showInputBox({
-            placeHolder: '请输入函数名称（可选）'
-          });
-        }
-        genApis.push(generateSingleApiCode(selected[0], {
-          funcName,
-          funcTpl: config.funcTpl,
-          typeMapping: config.typeMapping,
-          ignores: config.ignores,
-        }));
-      } else {
-        genApis = generateCode(selected, {
-          funcTpl: config.funcTpl,
-          typeMapping: config.typeMapping,
-          ignores: config.ignores,
-        });
-      }
+      const genApis = generateCode(selected, {
+        funcTpl: config.funcTpl,
+        typeMapping: config.typeMapping,
+        ignores: config.ignores,
+      });
 
       const { outputDir, targetFile, isFileTarget } = await determineOutputPaths(uri, config.output);
       try {
+        // 如果明确传递了 onlyModel 参数,使用传递的值;否则默认为 false(生成 API + Model)
+        const shouldOnlyModel = onlyModel === true;
+
         const { apiCount, modelCount } = await autoWriteAll(genApis, {
           apiOutput: isFileTarget ? targetFile! : outputDir,
           modelOutput: config.modelOutput,
           isOverride: !!uri,
-          onlyModel: onlyModel ?? config.onlyModel,
+          onlyModel: shouldOnlyModel,
           schemas: doc.components?.schemas,
           imports: config.imports,
           writedCallback: (type, filePath) => {
