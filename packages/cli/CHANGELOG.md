@@ -1,5 +1,16 @@
 # @unoapi/cli
 
+## 2.3.0
+
+### Minor Changes
+
+- 18c610e: 优化参数
+
+### Patch Changes
+
+- Updated dependencies [18c610e]
+  - @unoapi/core@2.3.0
+
 ## 2.2.0
 
 ### Minor Changes
