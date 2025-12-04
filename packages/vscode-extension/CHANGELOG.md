@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.0
+
+### Minor Changes
+
+- f34ca42: 正式版发布
+
 ## 0.1.1
 
 ### Patch Changes
