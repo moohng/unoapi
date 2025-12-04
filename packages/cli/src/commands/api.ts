@@ -6,7 +6,6 @@ import {
   generateSingleApiCode,
   loadDoc,
   searchApi,
-  filterApi,
   autoWriteAll,
 } from '@unoapi/core';
 import type { ApiOperationObject, GenerateApi, OpenAPIObject } from '@unoapi/core';
@@ -17,7 +16,7 @@ const consola = createLogger();
 interface CliApiOptions {
   input?: string;
   output?: string;
-  func?: string;
+  funcName?: string;
   onlyModel?: boolean;
   globalModel?: boolean;
   all?: boolean;
@@ -26,14 +25,15 @@ interface CliApiOptions {
 export function registerApiCommand(program: Command) {
   program
     .command('api', { isDefault: true })
+    .alias('gen')
     .argument('[input]', 'OpenAPI JSON 文档本地或远程地址')
     .argument('[output]', '指定输出目录或文件，会忽略从 url 中解析的目录结构')
     .description('生成 API 代码')
     .option('-i, --input <input>', 'OpenAPI JSON 文档本地或远程地址')
     .option('-o, --output <output>', '指定输出目录或文件，会忽略从 url 中解析的目录结构')
-    .option('--func <funcName>', '自定义 API 函数名称，生成单个 API 函数时生效')
-    .option('--only-model', '只生成 model 代码')
-    .option('--all', '生成所有接口的代码')
+    .option('-n, --func-name <funcName>', '自定义 API 函数名称，生成单个 API 函数时生效')
+    .option('-m, --only-model', '只生成 model 代码')
+    .option('-a, --all', '生成所有接口的代码')
     .action(async (openapiURI?: string, output?: string, options?: CliApiOptions) => {
       const config = await loadConfig();
       let doc: OpenAPIObject;
@@ -99,15 +99,15 @@ export function registerApiCommand(program: Command) {
 
       let genApis: GenerateApi[] = [];
       if (apis.length === 1) {
-        if (!options.func && !options.onlyModel) {
+        if (!options.funcName && !options.onlyModel) {
           // 让用户输入一个函数名称
           const funcName = await inquirer.input({
             message: '请输入函数名称（可选）：',
           });
-          options.func = funcName;
+          options.funcName = funcName;
         }
         genApis.push(generateSingleApiCode(apis[0], {
-          funcName: options.func,
+          funcName: options.funcName,
           funcTpl: config.funcTpl,
           typeMapping: config.typeMapping,
           ignores: config.ignores,

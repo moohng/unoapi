@@ -8,8 +8,8 @@
 ## ✨ 功能特性
 
 - **🚀 快速初始化**: 一键生成项目配置文件。
-- **📥 文档同步**: 快速下载并缓存 OpenAPI 文档。
 - **⚡ 代码生成**: 基于配置自动生成 API 接口和类型定义。
+- **📥 离线使用**: 下载并缓存 OpenAPI 文档。
 - **🔍 交互式体验**: 提供友好的命令行交互提示。
 
 ## 📦 安装
@@ -20,12 +20,14 @@
 npm install -g @unoapi/cli
 # 或
 pnpm add -g @unoapi/cli
+
+uno -h
 ```
 
 也可以使用 `npx` 临时运行：
 
 ```bash
-npx @unoapi/cli --help
+npx @unoapi/cli -h
 ```
 
 ## 🚀 快速开始
@@ -35,7 +37,7 @@ npx @unoapi/cli --help
 在项目根目录下运行：
 
 ```bash
-unoapi init
+uno init
 ```
 
 这将引导你创建一个 `unoapi.config.ts` 配置文件。
@@ -43,7 +45,7 @@ unoapi init
 ### 2. 下载文档
 
 ```bash
-unoapi download
+uno download -h
 ```
 
 这将根据配置的 URL 下载 OpenAPI 文档并缓存到本地。
@@ -51,7 +53,7 @@ unoapi download
 ### 3. 生成代码
 
 ```bash
-unoapi api
+uno api -h
 ```
 
 这将根据配置生成 API 接口和类型定义文件。
@@ -60,24 +62,52 @@ unoapi api
 
 | 命令 | 别名 | 说明 |
 | :--- | :--- | :--- |
-| `unoapi init` | - | 初始化配置文件 |
-| `unoapi download` | `dl` | 下载 OpenAPI 文档 |
-| `unoapi api` | `gen` | 生成 API 代码 |
-| `unoapi help` | - | 查看帮助信息 |
+| `uno init` | `i` | 初始化配置文件 |
+| `uno api` | `gen` | 生成 API 代码 |
+| `uno download` | `dl` | 下载 OpenAPI 文档 |
+| `uno help` | - | 查看帮助信息 |
 
 ## ⚙️ 配置文件
 
-CLI 会自动读取项目根目录下的 `unoapi.config.ts` 或 `unoapi.config.js`。
+CLI 会自动读取项目根目录下的 `package.json`、`unoapi.config.js` 或 `unoapi.config.ts`。
 
-```typescript
-import { defineUnoConfig } from '@unoapi/core';
+- `package.json`
 
-export default defineUnoConfig({
-  openapiUrl: 'https://api.example.com/v3/api-docs',
-  output: 'src/api',
-  // ...其他配置
-});
-```
+  ```json
+  {
+    "name": "your-project",
+    "version": "1.0.0",
+    "unoapi": {
+      "input": "https://api.example.com/v3/api-docs",
+      "output": "src/api",
+      // ...其他配置
+    }
+  }
+  ```
+
+- `unoapi.config.js`
+
+  ```javascript
+  module.exports = {
+    input: 'https://api.example.com/v3/api-docs',
+    output: 'src/api',
+    // ...其他配置
+  };
+  ```
+
+- `unoapi.config.ts`
+
+  > 要使用 `tsconfig.json` 配置，必须安装 `@unoapi/core` 依赖。
+
+  ```typescript
+  import { defineUnoConfig } from '@unoapi/core';
+
+  export default defineUnoConfig({
+    input: 'https://api.example.com/v3/api-docs',
+    output: 'src/api',
+    // ...其他配置
+  });
+  ```
 
 更多配置选项请参考 [@unoapi/core 文档](../core/README.md#配置参考)。
 

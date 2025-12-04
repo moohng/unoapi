@@ -8,13 +8,13 @@ import { registerApiCommand } from './commands/api.js';
 const program = new Command();
 program
   .name('uno')
-  .description('前端「接口层」代码生成工具')
+  .description('前端「API 接口层」代码生成工具')
   .helpOption('-h, --help', '帮助')
   .version(version, '-v, --version', '版本号');
 
 // Register all commands
 registerInitCommand(program);
-registerDownloadCommand(program);
 registerApiCommand(program);
+registerDownloadCommand(program);
 
 program.parse(process.argv);

@@ -8,6 +8,7 @@ const consola = createLogger();
 export function registerInitCommand(program: Command) {
   program
     .command('init')
+    .alias('i')
     .argument('[openapiUrl]', 'OpenAPI JSON 文档地址')
     .description('初始化 UnoAPI 配置文件')
     .action(async (openapiUrl: string) => {

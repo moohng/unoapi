@@ -7,6 +7,7 @@ const consola = createLogger();
 export function registerDownloadCommand(program: Command) {
   program
     .command('download')
+    .alias('dl')
     .argument('<openapiUrl>', 'OpenAPI JSON 在线文档地址')
     .argument('[output]', '输出文件路径')
     .option('-o, --output [output]', '输出文件路径')
