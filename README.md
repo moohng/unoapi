@@ -38,30 +38,30 @@ UnoAPI 由以下几个核心包组成：
 
 | 包名 | 描述 | 链接 |
 | :--- | :--- | :--- |
-| **@unoapi/vscode** | **VS Code 扩展** - 提供可视化界面、右键菜单和状态栏集成，是大多数开发者的首选。 | [查看文档](./packages/vscode-extension/README.md) |
-| **@unoapi/cli** | **命令行工具** - 适合 CI/CD 流程或偏好命令行的开发者。支持初始化、下载文档和生成代码。 | [查看文档](./packages/cli/README.md) |
 | **@unoapi/core** | **核心库** - 包含所有核心逻辑和解析引擎。如果你想基于 UnoAPI 开发自己的工具，可以使用它。 | [查看文档](./packages/core/README.md) |
+| **@unoapi/cli** | **命令行工具** - 适合 CI/CD 流程或偏好命令行的开发者。支持初始化、下载文档和生成代码。 | [查看文档](./packages/cli/README.md) |
+| **unoapi-vscode-extension** | **VS Code 扩展** - 提供可视化界面、右键菜单和状态栏集成，是大多数开发者的首选。 | [查看文档](./packages/vscode-extension/README.md) |
 
 ## 🚀 快速开始
 
-### 使用 VS Code 扩展 (推荐)
-
-1. 在 VS Code 扩展市场搜索 **"UnoAPI"** 并安装。
-2. 在项目中运行命令 `UnoAPI: [init] 生成配置文件`。
-3. 打开 `.ts` 文件，右键选择 `UnoAPI: [code] 生成 API 代码`。
-
-### 使用命令行工具
+### 使用命令行工具 (推荐)
 
 ```bash
 # 全局安装
 npm install -g @unoapi/cli
 
-# 初始化项目
-unoapi init
+# 创建配置
+uno init
 
 # 生成代码
-unoapi api
+uno api
 ```
+
+### 使用 VS Code 扩展
+
+1. 在 VS Code 扩展市场搜索 **"unoapi"** 并安装。
+2. 在项目中运行命令 `UnoAPI: [init] 生成配置文件`。
+3. 打开 `.ts` 文件，右键选择 `UnoAPI: [code] 生成 API 代码`。
 
 ## 🛠️ 开发与贡献
 
@@ -76,9 +76,6 @@ pnpm install
 
 # 构建所有包
 pnpm build
-
-# 运行 VS Code 扩展调试
-# 打开 packages/vscode-extension 目录，按 F5 启动调试
 ```
 
 ## 📄 许可证
