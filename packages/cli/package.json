@@ -8,7 +8,7 @@
     "unoapi": "dist/cli.js"
   },
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --minify --outfile=dist/cli.js --external:@unoapi/core --external:commander --external:consola --external:@inquirer/prompts"
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --minify --outfile=dist/cli.js --packages=external"
   },
   "files": [
     "dist"

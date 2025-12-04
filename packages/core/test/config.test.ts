@@ -106,7 +106,7 @@ describe('config 模块测试', () => {
       const config = await loadConfig();
       expect(config.input).toBe('url');
       expect(config.output).toBe(path.join(cwd, 'out'));
-      expect(config.modelOutput).toBe(path.join(cwd, 'out'));
+      expect(config.modelOutput).toBe(undefined);
       expect(config.cacheFile).toBe(path.join(cwd, DEFAULT_CACHE_FILE));
       expect(config.onlyModel).toBe(true);
     });

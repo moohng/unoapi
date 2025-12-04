@@ -95,19 +95,6 @@ export function setupFileWatchers(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(jsConfigWatcher);
 
-  // Watch unoapi.config.ts
-  const tsConfigPattern = new vscode.RelativePattern(workspaceRoot, 'unoapi.config.ts');
-  const tsConfigWatcher = vscode.workspace.createFileSystemWatcher(tsConfigPattern);
-  tsConfigWatcher.onDidCreate(async () => {
-    console.log('[UnoAPI] unoapi.config.ts created, updating status...');
-    await updateStatusBar();
-  });
-  tsConfigWatcher.onDidDelete(async () => {
-    console.log('[UnoAPI] unoapi.config.ts deleted, updating status...');
-    await updateStatusBar();
-  });
-  context.subscriptions.push(tsConfigWatcher);
-
   // Watch cache file
   loadConfig().then(config => {
     const cacheFileWatcher = vscode.workspace.createFileSystemWatcher(config.cacheFile);

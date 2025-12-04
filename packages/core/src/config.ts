@@ -1,6 +1,5 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { build } from 'esbuild';
 import Module from 'module';
 import { existsPath } from './tools.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
@@ -177,6 +176,7 @@ export async function loadConfig(): Promise<UnoConfig> {
   try {
     // 删除缓存
     delete require.cache[require.resolve(filePath)];
+    const { build } = await import('esbuild');
     const result = await build({
       entryPoints: [filePath],
       platform: 'node',
@@ -190,7 +190,8 @@ export async function loadConfig(): Promise<UnoConfig> {
     module._compile(result.outputFiles[0].text, 'unoapi.config.ts');
 
     return checkConfig(await module.exports.default || module.exports);
-  } catch {
+  } catch (error) {
+    console.error('加载配置文件失败', error);
     return checkConfig();
   }
 }
@@ -200,7 +201,7 @@ export async function loadConfig(): Promise<UnoConfig> {
  * @param config 配置项
  * @returns
  */
-function checkConfig(config?: UnoUserConfig): UnoConfig {
+export function checkConfig(config?: UnoUserConfig): UnoConfig {
   if (!config) {
     const output = path.join(process.cwd(), DEFAULT_OUTPUT);
     return {

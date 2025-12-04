@@ -32,7 +32,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
+  "peerDependencies": {
+    "esbuild": "^0.25.11"
+  },
+  "optionalDependencies": {
     "esbuild": "^0.25.11"
   },
   "devDependencies": {

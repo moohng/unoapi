@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import {
-  loadConfig,
   downloadDoc,
   UnoConfigType,
   generateConfigFile,
@@ -13,7 +12,7 @@ import {
 } from '@unoapi/core';
 import { updateStatusBar, setStatusBarLoading } from './statusBar';
 import { pickApis } from './apiPicker';
-import { determineOutputPaths } from './codeGenerator';
+import { determineOutputPaths, loadConfig } from './tools';
 
 function getWorkspaceRoot() {
   const ws = vscode.workspace.workspaceFolders;
