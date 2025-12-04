@@ -4,7 +4,6 @@ import { existsPath, isDirectory } from './tools.js';
 import { transformTypeIndexCode } from './transform.js';
 import type { ImportItem, GenerateApi, GenerateModel, ModelSchemaCollection } from './types.js';
 import { mergeImports, parseImports } from './import.js';
-import { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 
 interface WriteApiOptions {
   /** base 目录 */

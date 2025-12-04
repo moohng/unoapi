@@ -1,3 +1,4 @@
+import * as fs from 'fs/promises';
 import { getCacheFile, OpenApiInput } from './config.js';
 import { OpenAPIObject } from 'openapi3-ts/oas30';
 import { writeToFile } from './write.js';
@@ -50,9 +51,9 @@ export async function loadDoc(input: OpenApiInput) {
       return fetchDoc(input);
     }
     try {
-      input = pathToAbsolute(input);
-      delete require.cache[require.resolve(input)];
-      const doc = require(input) as OpenAPIObject;
+      input = await isDirectory(input) ? getCacheFile(input) : pathToAbsolute(input);
+      const data = await fs.readFile(input, 'utf-8');
+      const doc = JSON.parse(data) as OpenAPIObject;
       return doc;
     } catch {
       throw new Error(`加载 OpenAPI 文档失败，检查文件 ${input} 是否存在`);
