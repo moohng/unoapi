@@ -24,7 +24,7 @@ export async function updateStatusBar() {
   process.chdir(workspaceRoot);
 
   let exists = false;
-  for (const type of [UnoConfigType.PACKAGE, UnoConfigType.JS, UnoConfigType.TS]) {
+  for (const type of [UnoConfigType.PACKAGE, UnoConfigType.JS]) {
     if (await existsConfig(type)) {
       exists = true;
       break;

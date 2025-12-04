@@ -30,7 +30,7 @@ export async function determineOutputPaths(uri: vscode.Uri | undefined, output: 
 }
 
 /**
- * 加载配置文件（支持 ts-node）
+ * 加载配置文件
  * @returns
  */
 export async function loadConfig(): Promise<UnoConfig> {

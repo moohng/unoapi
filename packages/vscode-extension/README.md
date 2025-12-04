@@ -12,7 +12,6 @@
 - 📝 **类型安全** - 自动生成 TypeScript 类型定义
 - 🎯 **灵活配置** - 支持自定义函数模板、类型映射等
 - 📊 **状态栏显示** - 实时显示配置状态,一键初始化
-- 🎨 **多种生成方式** - 支持生成全部接口、单个接口或仅 Model
 
 ## 📦 安装
 
@@ -24,34 +23,24 @@
 
 点击状态栏的 `⚠ UnoAPI` 或运行命令 `UnoAPI: [init] 生成配置文件`
 
-![初始化配置](https://via.placeholder.com/600x300?text=Init+Config)
-
 ### 2. 生成 API 代码
 
 - **命令面板**: `Ctrl/Cmd + Shift + P` → `UnoAPI: [code] 生成 API 代码`
 - **右键菜单**: 在文件或文件夹上右键 → `UnoAPI: [code] 生成 API 代码`
 - **状态栏**: 点击 `✓ UnoAPI`
 
-![生成代码](https://via.placeholder.com/600x300?text=Generate+Code)
-
-### 3. 选择接口
-
-- 输入关键字搜索接口
-- 支持多选
-- 选择 "生成所有接口" 可一次性生成全部
-
-![选择接口](https://via.placeholder.com/600x300?text=Select+APIs)
+> ✨ 推荐使用**右键菜单**的方式，可在“当前目录或文件中”生成代码。
 
 ## 📝 配置说明
 
-支持三种配置方式:
+支持两种种配置方式:
 
 ### package.json
 
 ```json
 {
   "unoapi": {
-    "openapiUrl": "https://api.example.com/openapi.json",
+    "input": "https://api.example.com/openapi.json",
     "output": "src/api"
   }
 }
@@ -61,7 +50,7 @@
 
 ```javascript
 export default {
-  openapiUrl: 'https://api.example.com/openapi.json',
+  input: 'https://api.example.com/openapi.json',
   output: 'src/api',
   typeMapping: {
     integer: 'number'
@@ -69,30 +58,19 @@ export default {
 }
 ```
 
-### unoapi.config.ts
-
-```typescript
-import { defineUnoConfig } from '@unoapi/core';
-
-export default defineUnoConfig({
-  openapiUrl: 'https://api.example.com/openapi.json',
-  output: ['src/api', 'src/models'],
-  funcTpl: (context) => {
-    return `export function ${context.name}() { /* custom */ }`;
-  }
-});
-```
+> ❌ 扩展中不支持 `unoapi.config.ts` 的配置方式。
 
 ## 🎯 配置选项
 
 | 选项 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `openapiUrl` | `string` | - | OpenAPI 文档地址 |
+| `input` | `string \| Function` | - | OpenAPI 文档地址或本地路径 |
 | `output` | `string \| [string, string]` | `src/api` | 输出目录,数组表示 [API目录, Model目录] |
-| `cacheFile` | `string` | `.openapi-cache.json` | 缓存文件路径 |
-| `typeMapping` | `Record<string, string>` | - | 自定义类型映射 |
-| `funcTpl` | `Function` | - | 自定义函数模板 |
+| `typeMapping` | `Record<string, string>` | 内置默认 | 自定义类型映射 |
+| `funcTpl` | `Function` | 内置默认 | 自定义函数模板 |
 | `imports` | `string \| string[]` | - | API 文件头部导入代码 |
+| `onlyModel` | `boolean` | `false` | 是否仅生成 Model |
+| `ignore` | `(string \| RegExp)[]` | - | 忽略的接口 |
 
 ## 🎨 使用场景
 
@@ -101,8 +79,7 @@ export default defineUnoConfig({
 1. 打开目标文件
 2. 右键 → `UnoAPI: [code] 生成 API 代码`
 3. 选择接口
-4. 输入自定义函数名(可选)
-5. 代码自动追加到当前文件
+4. 代码自动追加到当前文件
 
 ### 场景 2: 生成到指定目录
 

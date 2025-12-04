@@ -33,7 +33,6 @@ export function registerInitConfigCommand(context: vscode.ExtensionContext) {
       const typeItem = await vscode.window.showQuickPick([
         { label: 'package.json（默认）', detail: '将配置写入 package.json 的 unoapi 字段', value: UnoConfigType.PACKAGE },
         { label: 'JavaScript 风格', detail: '生成 unoapi.config.js', value: UnoConfigType.JS },
-        { label: 'TypeScript 风格', detail: '生成 unoapi.config.ts', value: UnoConfigType.TS },
       ], { placeHolder: '选择一种配置风格', canPickMany: false });
 
       const cwd = getWorkspaceRoot();
