@@ -1,9 +1,6 @@
 name: 发布 VSCode 扩展
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -29,22 +26,18 @@ jobs:
               - 'packages/vscode-extension/package.json'
 
       - name: Setup pnpm
-        if: steps.filter.outputs.extension == 'true'
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        if: steps.filter.outputs.extension == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
           
       - name: Install dependencies
-        if: steps.filter.outputs.extension == 'true'
         run: pnpm install
         
       - name: Package and Publish
-        if: steps.filter.outputs.extension == 'true'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
@@ -56,14 +49,13 @@ jobs:
           
       - name: Get current version
         id: get_version
-        if: steps.filter.outputs.extension == 'true'
         run: |
           VERSION=$(node -p "require('./packages/vscode-extension/package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected release version: $VERSION"
 
       - name: Create GitHub Release
-        if: steps.filter.outputs.extension == 'true' && steps.get_version.outputs.version != ''
+        if: steps.get_version.outputs.version != ''
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -82,7 +74,7 @@ jobs:
           prerelease: false
           
       - name: Upload VSIX to Release
-        if: steps.filter.outputs.extension == 'true' && steps.get_version.outputs.version != ''
+        if: steps.get_version.outputs.version != ''
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
