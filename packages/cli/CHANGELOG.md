@@ -1,5 +1,13 @@
 # @unoapi/cli
 
+## 2.3.1
+
+### Patch Changes
+
+- f538c3e: 支持别名
+- Updated dependencies [f538c3e]
+  - @unoapi/core@2.3.1
+
 ## 2.3.0
 
 ### Minor Changes
